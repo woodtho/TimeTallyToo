@@ -724,14 +724,83 @@ export default function App() {
         className={`help-menu${state.dark ? " dark-mode" : ""}`}
         style={{ display: state.showHelp ? "block" : "none" }}
       >
-        <h3>How to Use TimeTally</h3>
-        <p>Manage time-tracking tasks with multiple lists.</p>
-        <ul>
-          <li><b>Tasks:</b> Add, edit, remove, enable/disable, drag to reorder.</li>
-          <li><b>Per-List Options:</b> Beep, TTS, voice, and mode.</li>
-          <li><b>TTS:</b> Durations speak with spelled-out units for clarity.</li>
-          <li><b>Persistence:</b> All lists and progress are saved automatically and synchronized across tabs.</li>
-        </ul>
+        <div className="help-grid">
+          <section className="help-card">
+            <h3><i className="fas fa-list-check" /> Tasks & Timing</h3>
+            <ul className="help-list">
+              <li><b>Add tasks:</b> Enter a task name and duration, choose units, then press <span className="kbd">+</span>.</li>
+              <li><b>Select current:</b> Click any task row to set it as current. Current shows a “[Current]” tag.</li>
+              <li><b>Enable/disable:</b> Use the toggle on each task to include or exclude it from the run.</li>
+              <li><b>Start/Pause:</b> Use <span className="btn-chip">Start</span> and <span className="btn-chip">Pause</span>. Completion beeps if enabled.</li>
+              <li><b>Skip:</b> Jumps to the next enabled task without changing the current task’s remaining time.</li>
+              <li><b>Complete early:</b> Marks the current task done immediately and advances.</li>
+              <li><b>Restart:</b> Resets all tasks’ remaining time to their original durations.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fab fa-youtube" /> YouTube Playlists</h3>
+            <ul className="help-list">
+              <li><b>Create a video task:</b> Paste a YouTube URL directly in the <em>Task Name</em> field. The app embeds the video automatically.</li>
+              <li><b>Auto-play:</b> When a video task becomes current and the timer starts, playback begins automatically.</li>
+              <li><b>TTS friendly:</b> Text-to-speech never reads the raw URL. It uses “YouTube video” when announcing.</li>
+              <li><b>Import support:</b> Imported lists that contain YouTube URLs auto-detect and embed without manual editing.</li>
+              <li><b>Playback control:</b> Non-current embeds are view-only. Select the task to interact or let the timer advance to it.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-pen-to-square" /> Editing & Menus</h3>
+            <ul className="help-list">
+              <li><b>Quick actions:</b> Use the <span className="dots">…</span> button on a task for Edit/Delete.</li>
+              <li><b>Edit:</b> Change the task name (or YouTube URL) and total time. Remaining updates when total changes.</li>
+              <li><b>List menus:</b> Use the <span className="dots">…</span> on a tab for Rename/Delete.</li>
+              <li><b>Clean menus:</b> Ellipsis icons are white by default; on tasks in light mode they appear black for contrast.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-arrows-up-down-left-right" /> Reordering</h3>
+            <ul className="help-list">
+              <li><b>Tasks:</b> Press and drag anywhere on a task row to reorder. Interactive controls don’t initiate dragging.</li>
+              <li><b>Lists:</b> Drag tabs to rearrange list order. The active list is highlighted.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-sliders" /> Options & TTS</h3>
+            <ul className="help-list">
+              <li><b>Per-list settings:</b> Toggle beep, enable TTS, choose a voice, and set announcement style.</li>
+              <li><b>Announcements:</b> Choose to announce task name, duration, both, or a custom completion message.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-file-import" /> Import / Export</h3>
+            <ul className="help-list">
+              <li><b>Export:</b> Downloads an XML snapshot including YouTube metadata.</li>
+              <li><b>Import:</b> XML files automatically detect YouTube URLs and embed videos on load.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-cloud" /> Persistence & Sync</h3>
+            <ul className="help-list">
+              <li><b>Auto-save:</b> All lists, progress, and settings persist to the browser.</li>
+              <li><b>Cross-tab sync:</b> Changes propagate immediately across open tabs/windows of the same browser profile.</li>
+              <li><b>Dark mode:</b> Toggle from the header. Theme preference persists.</li>
+            </ul>
+          </section>
+
+          <section className="help-card">
+            <h3><i className="fas fa-circle-question" /> Tips</h3>
+            <ul className="help-list">
+              <li>Use multiple lists to separate focus blocks, study sets, or workout circuits.</li>
+              <li>Disable tasks you want to skip without losing their setup.</li>
+              <li>Keep YouTube tasks near relevant steps; auto-play aligns video and timing.</li>
+            </ul>
+          </section>
+        </div>
       </div>
 
       {/* Tabs */}
