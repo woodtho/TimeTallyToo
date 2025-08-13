@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ------------------------- Persistence helpers ------------------------- */
 const LS_KEY = "timetally_v2_cssmatch";
+const SYNC_CH = "timetally_bc_sync"; // BroadcastChannel name for cross-tab sync
 
 const defaultConfig = () => ({
   beepEnabled: true,
@@ -23,34 +24,105 @@ const defaultState = () => ({
   isListCreating: false
 });
 
+function isYouTubeUrl(value = "") {
+  try {
+    const u = new URL(value);
+    const host = u.hostname.replace(/^www\./, "");
+    return (
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "youtu.be" ||
+      host.endsWith(".youtube.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function parseYouTubeId(value = "") {
+  // Supports youtu.be/{id}, youtube.com/watch?v=, youtube.com/shorts/, /embed/
+  try {
+    const u = new URL(value);
+    const host = u.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") return u.pathname.slice(1) || null; // /{id}
+    if (u.searchParams.get("v")) return u.searchParams.get("v");
+    const parts = u.pathname.split("/").filter(Boolean);
+    if (parts[0] === "shorts" && parts[1]) return parts[1];
+    if (parts[0] === "embed" && parts[1]) return parts[1];
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTaskFromName(rawName, timeSeconds) {
+  // Normalize a task; attach YT meta if the "name" is a YouTube URL
+  const name = String(rawName || "").trim();
+  if (isYouTubeUrl(name)) {
+    const ytId = parseYouTubeId(name);
+    return { name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false, meta: { ytUrl: name, ytId } };
+  }
+  return { name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false };
+}
+
+/* Migration to ensure previously-saved or imported tasks infer YT meta
+   so embeds appear without manual edits. */
+function migrateYouTubeMeta(state) {
+  const next = structuredClone(state);
+  let changed = false;
+  for (const listName of Object.keys(next.lists || {})) {
+    const arr = next.lists[listName] || [];
+    for (let i = 0; i < arr.length; i++) {
+      const t = arr[i];
+      // If no meta.ytId but the name is a YT URL, infer meta
+      if ((!t.meta || !t.meta.ytId) && isYouTubeUrl(t.name)) {
+        const ytId = parseYouTubeId(t.name);
+        if (ytId) {
+          arr[i] = { ...t, meta: { ...(t.meta || {}), ytId, ytUrl: t.name } }; // keep remaining as-is
+          changed = true;
+        }
+      }
+    }
+  }
+  return changed ? next : state;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return {
+    const merged = {
       ...defaultState(),
       ...parsed,
       listConfigs: { default: defaultConfig(), ...(parsed?.listConfigs || {}) }
     };
+    // Run migration so any old data with YT URLs but no meta still embeds
+    return migrateYouTubeMeta(merged);
   } catch {
     return defaultState();
   }
 }
 
+let saveTimer = null;
 function saveState(state) {
-  const slim = JSON.stringify({
-    lists: state.lists,
-    listOrder: state.listOrder,
-    currentList: state.currentList,
-    currentTaskIndex: state.currentTaskIndex,
-    listConfigs: state.listConfigs,
-    dark: state.dark,
-    showHelp: state.showHelp,
-    showOptions: state.showOptions,
-    isListCreating: state.isListCreating
-  });
-  localStorage.setItem(LS_KEY, slim);
+  // Debounced save to reduce churn during ticking, while staying responsive
+  const doSave = () => {
+    const slim = JSON.stringify({
+      lists: state.lists,
+      listOrder: state.listOrder,
+      currentList: state.currentList,
+      currentTaskIndex: state.currentTaskIndex,
+      listConfigs: state.listConfigs,
+      dark: state.dark,
+      showHelp: state.showHelp,
+      showOptions: state.showOptions,
+      isListCreating: state.isListCreating
+    });
+    localStorage.setItem(LS_KEY, slim); // write-through to storage for tab reloads
+  };
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 150); // small debounce window
 }
 
 /* ----------------------------- Utilities ------------------------------ */
@@ -85,6 +157,24 @@ function sumEnabledRemaining(tasks) {
   return tasks.reduce((acc, t) => acc + (t.enabled ? t.remaining : 0), 0);
 }
 
+/* ----------------------------- YouTube embed helpers ------------------------------ */
+function ytIframeSrc(id) {
+  // enablejsapi=1 allows control via postMessage; modest branding; no related; playsinline
+  return `https://www.youtube.com/embed/${id}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1`;
+}
+
+function postToYouTubeIframe(iframe, func) {
+  // Uses player API via postMessage without loading extra JS
+  try {
+    iframe?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func, args: [] }),
+      "*"
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 /* ----------------------------- Main App ------------------------------ */
 export default function App() {
   const [state, setState] = useState(loadState);
@@ -95,6 +185,7 @@ export default function App() {
   const audioRef = useRef(null);
   const lastTick = useRef(null);
   const draggedTabIndex = useRef(null);
+  const bcRef = useRef(null);                               // BroadcastChannel ref
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -107,8 +198,58 @@ export default function App() {
     document.body.classList.toggle("dark-mode", !!state.dark);
   }, [state.dark]);
 
-  /* Persist */
-  useEffect(() => { saveState(state); }, [state]);
+  /* Persist (debounced) + cross-tab broadcast */
+  useEffect(() => {
+    saveState(state); // debounced localStorage persistence
+    try {
+      bcRef.current?.postMessage({ type: "STATE_PATCHED" }); // lightweight nudge; other tabs reload from LS
+    } catch { /* ignore */ }
+  }, [state]);
+
+  /* Before unload: final flush */
+  useEffect(() => {
+    const handler = () => {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [state]);
+
+  /* Cross-tab synchronization: storage + BroadcastChannel */
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === LS_KEY && e.newValue) {
+        try {
+          const incoming = JSON.parse(e.newValue);
+          setState((curr) => migrateYouTubeMeta({
+            ...curr,
+            lists: incoming.lists ?? curr.lists,
+            listOrder: incoming.listOrder ?? curr.listOrder,
+            currentList: incoming.currentList ?? curr.currentList,
+            currentTaskIndex: incoming.currentTaskIndex ?? curr.currentTaskIndex,
+            listConfigs: incoming.listConfigs ?? curr.listConfigs,
+            dark: incoming.dark ?? curr.dark
+          }));
+        } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    try {
+      bcRef.current = new BroadcastChannel(SYNC_CH);
+      bcRef.current.onmessage = (msg) => {
+        if (msg?.data?.type === "STATE_PATCHED") {
+          const next = loadState();
+          setState((_) => next);
+        }
+      };
+    } catch { /* unsupported */ }
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      try { bcRef.current?.close?.(); } catch { /* ignore */ }
+    };
+  }, []);
 
   /* Beep */
   useEffect(() => {
@@ -164,7 +305,7 @@ export default function App() {
   const patch = (fn) => setState((s) => {
     const next = structuredClone(s);
     fn(next);
-    return next;
+    return migrateYouTubeMeta(next); // keep meta consistent whenever we patch
   });
 
   function ensureListConfig(name) {
@@ -232,7 +373,9 @@ export default function App() {
     const t = toSeconds(amt);
     patch((n) => {
       const listTasks = n.lists[n.currentList];
-      listTasks.push({ name, time: t, remaining: t, enabled: true, editing: false });
+      // Normalize so YT URL inputs get meta immediately
+      const norm = normalizeTaskFromName(name, t);
+      listTasks.push(norm);
     });
     document.getElementById("taskName").value = "";
     document.getElementById("taskTime").value = "";
@@ -248,12 +391,18 @@ export default function App() {
   function editTask(i, patchFields) {
     patch((n) => {
       const t = n.lists[n.currentList][i];
+      // If name changes, re-normalize possible YT metadata
+      let next = { ...t, ...patchFields };
+      if (patchFields.name !== undefined) {
+        const norm = normalizeTaskFromName(String(patchFields.name), next.time ?? t.time);
+        next = { ...next, ...norm, remaining: (patchFields.remaining ?? norm.remaining) };
+      }
       const nextTime = patchFields.time ?? t.time;
       const timeChanged = nextTime !== t.time;
       n.lists[n.currentList][i] = {
-        ...t,
-        ...patchFields,
-        remaining: timeChanged ? nextTime : (patchFields.remaining ?? t.remaining)
+        ...next,
+        time: nextTime,
+        remaining: timeChanged ? nextTime : (patchFields.remaining ?? next.remaining)
       };
     });
   }
@@ -323,7 +472,7 @@ export default function App() {
     document.body.style.touchAction = "";
   }
 
-  /* Timer */
+  /* Timer + TTS */
   function speak(text) {
     if (!config.ttsEnabled || !text) return;
     const utter = new SpeechSynthesisUtterance(text);
@@ -343,10 +492,33 @@ export default function App() {
     return -1;
   }
 
+  function taskTitleForTTS(task) {
+    // Do not read the URL; prefer a generic label if no better title is available
+    if (isYouTubeUrl(task.name)) return "YouTube video";
+    return task.name;
+  }
+
+  function pauseAllYouTube() {
+    // Pause all embedded players via postMessage
+    try {
+      const iframes = document.querySelectorAll('iframe[data-yt-frame="1"]');
+      iframes.forEach((f) => postToYouTubeIframe(f, "pauseVideo"));
+    } catch { /* ignore */ }
+  }
+
+  function playYouTubeIfAny(idx) {
+    // Autoplay the current task's video if the task has a YT ID (works for imported & newly added)
+    const key = `${state.currentList}__${idx}`;
+    const iframe = document.getElementById(`yt-iframe-${key}`);
+    if (!iframe) return;
+    postToYouTubeIframe(iframe, "playVideo"); // request playback
+  }
+
   function announceStart(task) {
     const dur = ttsDuration(task.remaining);
-    if (config.ttsMode === "taskNamePlusDurationStart") speak(`Starting ${task.name} for ${dur}`);
-    else if (config.ttsMode === "taskNameStart") speak(`Starting ${task.name}`);
+    const title = taskTitleForTTS(task);
+    if (config.ttsMode === "taskNamePlusDurationStart") speak(`Starting ${title} for ${dur}`);
+    else if (config.ttsMode === "taskNameStart") speak(`Starting ${title}`);
     else if (config.ttsMode === "durationStart") speak(`Starting ${dur}`);
   }
 
@@ -362,6 +534,8 @@ export default function App() {
     patch((n) => { n.currentTaskIndex = startIndex; });
     const current = (state.lists[state.currentList] || [])[startIndex];
     announceStart(current);
+    pauseAllYouTube();           // ensure only the current video plays
+    playYouTubeIfAny(startIndex); // autoplay YT when starting the task
     lastTick.current = performance.now();
 
     timerRef.current = setInterval(() => {
@@ -382,11 +556,14 @@ export default function App() {
           if (nxt === -1) {
             clearInterval(timerRef.current);
             timerRef.current = null;
+            pauseAllYouTube();           // stop any video when series ends
             arr.forEach((x) => (x.remaining = x.time));
             n.currentTaskIndex = 0;
           } else {
             n.currentTaskIndex = nxt;
             announceStart(arr[nxt]);
+            pauseAllYouTube();
+            playYouTubeIfAny(nxt);      // autoplay next video's task if any
           }
         }
       });
@@ -397,14 +574,22 @@ export default function App() {
     if (!timerRef.current) return;
     clearInterval(timerRef.current);
     timerRef.current = null;
+    pauseAllYouTube(); // pause any YT playback when pausing timer
   }
 
   function skipTask() {
-    pauseTimer();
+    // Move to the next task but leave the current task's remaining time unchanged
     const nxt = nextEnabledIndex(state.currentTaskIndex + 1);
     if (nxt === -1) return;
-    patch((n) => { n.currentTaskIndex = nxt; });
-    startTimer();
+    const wasRunning = !!timerRef.current;
+    pauseAllYouTube(); // stop any current playback
+    if (wasRunning) {
+      lastTick.current = performance.now(); // avoid time jump
+      patch((n) => { n.currentTaskIndex = nxt; });
+      playYouTubeIfAny(nxt); // autoplay next if video
+    } else {
+      patch((n) => { n.currentTaskIndex = nxt; });
+    }
   }
 
   function completeEarly() {
@@ -439,6 +624,10 @@ export default function App() {
         el.setAttribute("time", String(t.time));
         el.setAttribute("remaining", String(Math.round(t.remaining)));
         el.setAttribute("enabled", t.enabled ? "1" : "0");
+        if (t.meta?.ytId) {
+          el.setAttribute("ytId", t.meta.ytId);
+          el.setAttribute("ytUrl", t.meta.ytUrl || "");
+        }
         listEl.appendChild(el);
       });
       root.appendChild(listEl);
@@ -465,13 +654,26 @@ export default function App() {
           listNodes.forEach((ln) => {
             const name = ln.getAttribute("name") || "imported";
             if (!n.lists[name]) { n.lists[name] = []; n.listOrder.push(name); }
-            const tasks = [...ln.querySelectorAll("task")].map((el) => ({
-              name: el.getAttribute("name") || "Task",
-              time: Number(el.getAttribute("time") || 0),
-              remaining: Number(el.getAttribute("remaining") || 0) || Number(el.getAttribute("time") || 0),
-              enabled: (el.getAttribute("enabled") || "1") === "1",
-              editing: false
-            }));
+            const tasks = [...ln.querySelectorAll("task")].map((el) => {
+              const time = Number(el.getAttribute("time") || 0);
+              const rem = Number(el.getAttribute("remaining") || 0) || time;
+              const importedName = el.getAttribute("name") || "Task";
+              // Start from normalization so YouTube URLs immediately get meta
+              const norm = normalizeTaskFromName(importedName, time);
+              // Respect explicit attributes if present (back-compat)
+              const ytIdAttr = el.getAttribute("ytId");
+              const ytUrlAttr = el.getAttribute("ytUrl");
+              const meta = ytIdAttr
+                ? { ytId: ytIdAttr, ytUrl: ytUrlAttr || (isYouTubeUrl(importedName) ? importedName : "") }
+                : norm.meta;
+              return {
+                ...norm,
+                remaining: rem,                  // keep imported remaining value
+                enabled: (el.getAttribute("enabled") || "1") === "1",
+                editing: false,
+                meta
+              };
+            });
             n.lists[name].push(...tasks);
             if (!n.listConfigs[name]) n.listConfigs[name] = defaultConfig();
           });
@@ -528,7 +730,7 @@ export default function App() {
           <li><b>Tasks:</b> Add, edit, remove, enable/disable, drag to reorder.</li>
           <li><b>Per-List Options:</b> Beep, TTS, voice, and mode.</li>
           <li><b>TTS:</b> Durations speak with spelled-out units for clarity.</li>
-          <li><b>Persistence:</b> All lists and progress are saved automatically.</li>
+          <li><b>Persistence:</b> All lists and progress are saved automatically and synchronized across tabs.</li>
         </ul>
       </div>
 
@@ -711,7 +913,7 @@ export default function App() {
       {/* Task input */}
       <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
         <div className={`task-input${state.dark ? " dark-mode" : ""}`}>
-          <input type="text" id="taskName" placeholder="Task Name" />
+          <input type="text" id="taskName" placeholder="Task Name or YouTube URL" />
           <input type="number" id="taskTime" placeholder="Time" />
           <select id="timeUnit" aria-label="Time Unit" defaultValue="minutes">
             <option value="seconds">Seconds</option>
@@ -729,6 +931,9 @@ export default function App() {
         {tasks.map((t, i) => {
           const isCurrent = i === state.currentTaskIndex;
           const itemCls = `task-item${state.dark ? " dark-mode" : ""}`;
+          // Robust: compute ytId from meta first, otherwise from the name if it is a URL
+          const ytId = t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null);
+          const key = `${state.currentList}__${i}`;
           return (
             <li
               key={i}
@@ -745,8 +950,27 @@ export default function App() {
               }}
             >
               <div className="task-details">
-                <div className="task-name">{isCurrent ? "[Current] " : ""}{t.name}</div>
+                <div className="task-name">
+                  {isCurrent ? "[Current] " : ""}
+                  {isYouTubeUrl(t.name) ? "YouTube video" : t.name}
+                </div>
                 <div className="task-time">({formatHMS(t.remaining)} remaining)</div>
+
+                {/* Embedded YouTube player */}
+                {ytId && (
+                  <div className="yt-embed-wrapper">
+                    <iframe
+                      id={`yt-iframe-${key}`}
+                      data-yt-frame="1"
+                      src={ytIframeSrc(ytId)}
+                      title="YouTube video"
+                      style={{ width: "100%", aspectRatio: "16 / 9", border: 0, pointerEvents: isCurrent ? "auto" : "none", opacity: isCurrent ? 1 : 0.9 }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    {!isCurrent && <div className="yt-embed-hint">Select task to control playback</div>}
+                  </div>
+                )}
               </div>
 
               <div className="task-actions">
@@ -798,7 +1022,7 @@ export default function App() {
                       title="Save"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const nn = prompt("Task name", t.name) ?? t.name;
+                        const nn = prompt("Task name (or YouTube URL)", t.name) ?? t.name;
                         const nt = Number(prompt("Seconds (total time)", String(t.time)) ?? t.time);
                         if (nn.trim() && nt > 0) editTask(i, { name: nn.trim(), time: nt });
                         editTask(i, { editing: false });
