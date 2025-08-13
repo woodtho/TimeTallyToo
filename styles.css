@@ -108,46 +108,12 @@ h1 {
   margin-right: 6px;
 }
 
-.tab-edit-icon {
-  margin-left: 6px;
-  cursor: pointer;
-  color: #fff;
-}
-
-.tab-edit-controls {
-  display: none;
-  gap: 5px;
-  align-items: center;
-}
-
 .tab-edit-input {
   min-width: 100px;
   padding: 3px 5px;
   border-radius: 4px;
   border: 1px solid #ccc;
   font-size: 14px;
-}
-
-.tab-edit-btn,
-.tab-delete-btn {
-  background: #4caf50;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  padding: 4px 6px;
-  cursor: pointer;
-}
-
-.tab-edit-btn:hover {
-  background: #43a047;
-}
-
-.tab-delete-btn {
-  background: #f44336;
-}
-
-.tab-delete-btn:hover {
-  background: #e53935;
 }
 
 /* The "Add new list" button */
@@ -243,11 +209,12 @@ h1 {
 
 .task-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 8px;
   border-bottom: 1px solid #eee;
   cursor: pointer; /* click to set current task */
+  gap: 10px;
 }
 
 .task-item .task-details {
@@ -269,10 +236,11 @@ h1 {
   display: flex;
   gap: 5px;
   cursor: default; /* prevents changing the current task when clicking these controls */
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .task-actions button {
-  /* color: #fff; */
   border: none;
   border-radius: 4px;
   padding: 5px;
@@ -280,30 +248,24 @@ h1 {
   font-size: 12px;
 }
 
+/* Remove background on hover for ellipsis triggers to keep them clean */
 .task-actions button:hover {
-  background: #1976d2;
+  background: transparent;
 }
 
-.edit-fields input {
-  margin-right: 5px;
-  padding: 4px;
+/* YouTube embed block inside tasks */
+.yt-embed-wrapper {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  background: #000;
+}
+
+.yt-embed-hint {
   font-size: 12px;
-}
-
-.edit-fields button {
-  background: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-right: 5px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.edit-fields button:hover {
-  background: #43a047;
+  color: #777;
+  margin-top: 4px;
 }
 
 /* Timer section */
@@ -366,50 +328,23 @@ h1 {
   gap: 5px;
 }
 
-.btn-start {
-  background: #4caf50;
-}
+.btn-start { background: #4caf50; }
+.btn-start:hover { background: #43a047; }
 
-.btn-start:hover {
-  background: #43a047;
-}
+.btn-skip { background: #ff9800; }
+.btn-skip:hover { background: #fb8c00; }
 
-.btn-skip {
-  background: #ff9800;
-}
+.btn-complete { background: #2196f3; }
+.btn-complete:hover { background: #1976d2; }
 
-.btn-skip:hover {
-  background: #fb8c00;
-}
+.btn-pause { background: #757575; }
+.btn-pause:hover { background: #616161; }
 
-.btn-complete {
-  background: #2196f3;
-}
-
-.btn-complete:hover {
-  background: #1976d2;
-}
-
-.btn-pause {
-  background: #757575;
-}
-
-.btn-pause:hover {
-  background: #616161;
-}
-
-.btn-red {
-  background: #f44336;
-}
-
-.btn-red:hover {
-  background: #e53935;
-}
+.btn-red { background: #f44336; }
+.btn-red:hover { background: #e53935; }
 
 /* Import/Export */
-.import-export {
-  margin-top: 25px;
-}
+.import-export { margin-top: 25px; }
 
 .export-section {
   display: flex;
@@ -428,9 +363,7 @@ h1 {
   font-weight: bold;
 }
 
-.btn-export:hover {
-  background: #00897b;
-}
+.btn-export:hover { background: #00897b; }
 
 .import-section {
   display: flex;
@@ -464,9 +397,7 @@ h1 {
   font-weight: bold;
 }
 
-#importFileBttn:hover {
-  background: #00897b;
-}
+#importFileBttn:hover { background: #00897b; }
 
 .import-section input[type="file"]::-webkit-file-upload-button {
   background: #009688;
@@ -478,9 +409,7 @@ h1 {
   font-size: 14px;
 }
 
-.import-section input[type="file"]::-webkit-file-upload-button:hover {
-  background: #00897b;
-}
+.import-section input[type="file"]::-webkit-file-upload-button:hover { background: #00897b; }
 
 /* Responsive adjustments */
 @media (max-width: 400px) {
@@ -555,8 +484,8 @@ header {
 /* Toggle switch container (used in tasks and options) */
 .enable-checkbox-wrapper {
   position: relative;
-  width: 40px;
-  height: 20px;
+  width: 44px;
+  height: 24px;
   display: inline-block;
 }
 
@@ -587,8 +516,8 @@ header {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background-color: white;
   border-radius: 50%;
   transition: transform 0.3s ease;
@@ -725,29 +654,26 @@ body.dark-mode {
   color: #fff;
 }
 
-/* === Added: shared small icon button (… triggers) === */
+/* === Small icon button (… triggers) === */
 .icon-button {
   background: transparent;
   border: none;
-  color: #fff;
   cursor: pointer;
   padding: 4px 6px;
   font-size: 14px;
   line-height: 1;
 }
-.icon-button:hover { opacity: 0.9; }
 
-/* Ensure visibility in light mode where tabs/actions are blue or gray */
-.tab .icon-button { color: #000; }
-.task-actions .icon-button { color: #000; }
-.task-actions .icon-button:hover { color: unset !important; background:unset; }
+/* Ellipsis buttons: default white, no background; tasks in light mode should appear black */
+.ellipsis-button { color: #fff; } /* default white */
+html:not(.dark-mode) .task-actions .ellipsis-button { color: #000; } /* black for task ellipsis in light mode */
+/* Keep tabs' ellipsis white in both modes for contrast */
+.tab .ellipsis-button { color: #fff; }
 
+/* Remove hover background to keep "no background" appearance */
+.icon-button:hover { opacity: 0.8; background: transparent; }
 
-
-/* Dark-mode icon buttons inside task actions should keep accent color */
-.task-actions.dark-mode .icon-button { color: #fff; }
-
-/* === Added: menu popover container and items === */
+/* === Menu popover === */
 .menu-popover {
   position: absolute;
   min-width: 160px;
@@ -787,82 +713,10 @@ body.dark-mode {
 /* Ensure clickable area for ellipsis is visually aligned in both modes */
 .ellipsis-button { padding: 4px 6px; }
 
-/* === Added: list item positioning to anchor popovers reliably === */
+/* Anchor popovers reliably */
 .task-item { position: relative; }
 .tab { position: relative; }
 
-/* === Added: make task action area non-shrinking and aligned === */
-.task-actions { align-items: center; flex-shrink: 0; }
-
-/* === Added: improve touch targets for toggles on mobile === */
-.enable-checkbox-wrapper { width: 44px; height: 24px; }
-.enable-checkbox-label::after { width: 20px; height: 20px; }
-.enable-checkbox:checked + .enable-checkbox-label::after { transform: translateX(20px); }
-
-/* === Added: ensure buttons inside menus inherit theme accents === */
-.menu-item i { width: 16px; text-align: center; }
-
-/* === Added: pointer dragging visual hint (optional subtle opacity) === */
+/* Dragging hint */
 .task-item.dragging,
 .tab.dragging { opacity: 0.8; }
-
-/* --- Unified Ellipsis Menu Styles (applies to both list and task menus) --- */
-.menu-button {
-  background: transparent;
-  border: none;
-  color: #fff; /* white in dark mode by default */
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px;
-}
-
-html:not(.dark-mode) .menu-button {
-  color: #333; /* dark gray in light mode */
-}
-
-.menu-button:hover {
-  opacity: 0.8;
-}
-
-.menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fafafa;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  min-width: 140px;
-  z-index: 10;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-.menu.dark-mode {
-  background: #2a2a2a;
-  border-color: #444;
-}
-
-.menu ul {
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-
-.menu li {
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.menu li:hover {
-  background: #e0e0e0;
-}
-
-.menu.dark-mode li:hover {
-  background: #444;
-}
-
-/* Ensure clickable ... icon alignment in tabs and tasks */
-.tab .menu-button,
-.task-item .menu-button {
-  margin-left: auto;
-}
