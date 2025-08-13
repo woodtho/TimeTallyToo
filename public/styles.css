@@ -1,0 +1,868 @@
+/* Basic styling + updated consistency for classes */
+
+/* Basic page/container styling */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+}
+
+.container {
+  width: 90%;
+  max-width: 650px;
+  margin: 30px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px; /* consistent with other elements */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Boxes around relevant sections */
+.section-box {
+  border: 1px solid #ccc; /* unified border color */
+  border-radius: 8px; /* increased radius for consistency */
+  padding: 10px;
+  margin-bottom: 15px;
+  background: #fafafa;
+}
+
+/* Estimated finish time (unified styles) */
+.estimated-finish {
+  margin-top: 10px; /* unified margin-top */
+  font-size: 16px; /* unified font-size */
+  font-weight: bold; /* preserved bold */
+  font-style: italic; /* added italic for consistency */
+  text-align: center;
+  color: #555;
+}
+
+/* Options menu (unified styles) */
+.options-menu {
+  display: none; /* toggled in code */
+  margin-bottom: 20px; /* kept 20px for spacing */
+  background: #fafafa;
+  border: 1px solid #ccc; /* unified border color */
+  border-radius: 8px; /* consistent with container/sections */
+  padding: 10px;
+}
+
+.options-menu h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.option-row label {
+  font-size: 14px;
+  color: #333;
+}
+
+/* Tabs container */
+.tabs-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 5px;
+}
+
+/* Each tab is draggable */
+.tab {
+  display: flex;
+  align-items: center;
+  background: #2196f3;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: move; /* indicates draggable */
+  position: relative;
+  user-select: none;
+}
+
+.tab.active {
+  background: #1976d2; /* darker for active tab */
+}
+
+.tab.dragging {
+  opacity: 0.5;
+  border: 2px dashed #ccc;
+}
+
+.tab-name {
+  margin-right: 6px;
+}
+
+.tab-edit-icon {
+  margin-left: 6px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.tab-edit-controls {
+  display: none;
+  gap: 5px;
+  align-items: center;
+}
+
+.tab-edit-input {
+  min-width: 100px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.tab-edit-btn,
+.tab-delete-btn {
+  background: #4caf50;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.tab-edit-btn:hover {
+  background: #43a047;
+}
+
+.tab-delete-btn {
+  background: #f44336;
+}
+
+.tab-delete-btn:hover {
+  background: #e53935;
+}
+
+/* The "Add new list" button */
+.tab-add-btn {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab-add-btn:hover {
+  background: #43a047;
+}
+
+/* Fields for creating a new list */
+#listCreateFields {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+#createListName {
+  min-width: 120px;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#listCreateFields button {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#listCreateFields button:hover {
+  background: #43a047;
+}
+
+.btn-cancel {
+  background: #f44336 !important;
+}
+
+.btn-cancel:hover {
+  background: #e53935 !important;
+}
+
+/* Task input fields */
+.task-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0; /* replaced by .section-box spacing */
+}
+
+.task-input input,
+.task-input select {
+  flex: 1;
+  min-width: 100px;
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.task-input button {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.task-input button:hover {
+  background: #43a047;
+}
+
+/* Task list styling */
+#taskList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer; /* click to set current task */
+}
+
+.task-item .task-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.task-item .task-details .task-name {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.task-item .task-details .task-time {
+  font-size: 14px;
+}
+
+.task-actions {
+  display: flex;
+  gap: 5px;
+  cursor: default; /* prevents changing the current task when clicking these controls */
+}
+
+.task-actions button {
+  /* color: #fff; */
+  border: none;
+  border-radius: 4px;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.task-actions button:hover {
+  background: #1976d2;
+}
+
+.edit-fields input {
+  margin-right: 5px;
+  padding: 4px;
+  font-size: 12px;
+}
+
+.edit-fields button {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  margin-right: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.edit-fields button:hover {
+  background: #43a047;
+}
+
+/* Timer section */
+.timer-section {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px; /* consistent radius */
+  padding: 10px;
+  background: #fafafa;
+  margin-bottom: 15px;
+}
+
+.progress-container {
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  background: #4caf50;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.timer-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #555;
+}
+
+.timer-text,
+.timer-percent {
+  margin: 4px 0;
+}
+
+/* Timer controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.controls button {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-start {
+  background: #4caf50;
+}
+
+.btn-start:hover {
+  background: #43a047;
+}
+
+.btn-skip {
+  background: #ff9800;
+}
+
+.btn-skip:hover {
+  background: #fb8c00;
+}
+
+.btn-complete {
+  background: #2196f3;
+}
+
+.btn-complete:hover {
+  background: #1976d2;
+}
+
+.btn-pause {
+  background: #757575;
+}
+
+.btn-pause:hover {
+  background: #616161;
+}
+
+.btn-red {
+  background: #f44336;
+}
+
+.btn-red:hover {
+  background: #e53935;
+}
+
+/* Import/Export */
+.import-export {
+  margin-top: 25px;
+}
+
+.export-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.btn-export {
+  background: #009688;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.btn-export:hover {
+  background: #00897b;
+}
+
+.import-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.import-section input[type="file"] {
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #555;
+  font-size: 14px;
+}
+
+#importFileBttn {
+  --fa-font-brands: normal 400 1em/1 "Font Awesome 6 Brands";
+  --fa-font-regular: normal 400 1em/1 "Font Awesome 6 Free";
+  --fa-font-solid: normal 900 1em/1 "Font Awesome 6 Free";
+  background: #009688;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#importFileBttn:hover {
+  background: #00897b;
+}
+
+.import-section input[type="file"]::-webkit-file-upload-button {
+  background: #009688;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.import-section input[type="file"]::-webkit-file-upload-button:hover {
+  background: #00897b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .tabs-container,
+  .task-input,
+  .controls,
+  .import-section {
+    flex-direction: column;
+  }
+
+  .task-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Header gear button for toggling options */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Header buttons */
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.gear-button,
+.help-button {
+  background: transparent;
+  border: none;
+  color: #2196f3;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.gear-button:hover,
+.help-button:hover {
+  color: #1976d2;
+}
+
+/* Help Menu */
+.help-menu {
+  display: none;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.help-menu h3 {
+  margin-top: 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.help-menu ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.help-menu li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* Toggle switch container (used in tasks and options) */
+.enable-checkbox-wrapper {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  display: inline-block;
+}
+
+/* Hide the default checkbox */
+.enable-checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Custom toggle switch background */
+.enable-checkbox-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: 1px solid #bbb;
+}
+
+/* Knob inside the toggle switch */
+.enable-checkbox-label::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* When checkbox is checked */
+.enable-checkbox:checked + .enable-checkbox-label {
+  background-color: #4caf50;
+  border-color: #43a047;
+}
+
+.enable-checkbox:checked + .enable-checkbox-label::after {
+  transform: translateX(20px);
+}
+
+/* Dark mode styles */
+html.dark-mode {
+  background: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode {
+  background: #121212;
+  color: #ffffff;
+}
+
+.container.dark-mode {
+  background: #1e1e1e;
+  box-shadow: 0 2px 6px rgba(255, 255, 255, 0.1);
+}
+
+.section-box.dark-mode {
+  background: #2a2a2a;
+}
+
+.options-menu.dark-mode,
+.help-menu.dark-mode {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.tab.dark-mode {
+  background: #333;
+}
+
+.tab.active.dark-mode {
+  background: #444;
+}
+
+.task-item.dark-mode {
+  border-bottom: 1px solid #444;
+}
+
+.progress-container.dark-mode {
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.progress-bar.dark-mode {
+  background: #76c7c0;
+}
+
+/* Dark mode toggle button */
+.dark-mode-button {
+  background: transparent;
+  border: none;
+  color: #2196f3;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.dark-mode-button:hover {
+  color: #1976d2;
+}
+
+.task-input.dark-mode input,
+.task-input.dark-mode select {
+  flex: 1;
+  min-width: 100px;
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #333;
+  color: #fff;
+}
+
+.timer-section.dark-mode {
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  background: #555;
+  color: #fff;
+}
+
+.timer-info.dark-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #fff;
+}
+
+.estimated-finish.dark-mode {
+  margin-top: 10px; /* unified margin-top */
+  font-size: 16px; /* unified font-size */
+  font-weight: bold; /* preserved bold */
+  font-style: italic; /* added italic for consistency */
+  text-align: center;
+  color: #fff;
+}
+
+.option-row.dark-mode label {
+  color: #fff;
+}
+
+.task-input.dark-mode input::placeholder {
+  color: #fff;
+}
+
+.tab-edit-input.dark-mode {
+  min-width: 100px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #333;
+  color: #fff;
+}
+
+/* === Added: shared small icon button (… triggers) === */
+.icon-button {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 14px;
+  line-height: 1;
+}
+.icon-button:hover { opacity: 0.9; }
+
+/* Ensure visibility in light mode where tabs/actions are blue or gray */
+.tab .icon-button { color: #000; }
+.task-actions .icon-button { color: #000; }
+.task-actions .icon-button:hover { color: unset !important; background:unset; }
+
+
+
+/* Dark-mode icon buttons inside task actions should keep accent color */
+.task-actions.dark-mode .icon-button { color: #fff; }
+
+/* === Added: menu popover container and items === */
+.menu-popover {
+  position: absolute;
+  min-width: 160px;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 6px 0;
+  z-index: 1000;
+}
+.menu-popover.dark-mode {
+  background: #2a2a2a;
+  border-color: #444;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.menu-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-item:hover { background: rgba(0,0,0,0.05); }
+.dark-mode .menu-item { color: #fff; }
+.dark-mode .menu-item:hover { background: rgba(255,255,255,0.08); }
+
+.menu-danger { color: #e53935; }
+.dark-mode .menu-danger { color: #ff6b63; }
+
+/* Ensure clickable area for ellipsis is visually aligned in both modes */
+.ellipsis-button { padding: 4px 6px; }
+
+/* === Added: list item positioning to anchor popovers reliably === */
+.task-item { position: relative; }
+.tab { position: relative; }
+
+/* === Added: make task action area non-shrinking and aligned === */
+.task-actions { align-items: center; flex-shrink: 0; }
+
+/* === Added: improve touch targets for toggles on mobile === */
+.enable-checkbox-wrapper { width: 44px; height: 24px; }
+.enable-checkbox-label::after { width: 20px; height: 20px; }
+.enable-checkbox:checked + .enable-checkbox-label::after { transform: translateX(20px); }
+
+/* === Added: ensure buttons inside menus inherit theme accents === */
+.menu-item i { width: 16px; text-align: center; }
+
+/* === Added: pointer dragging visual hint (optional subtle opacity) === */
+.task-item.dragging,
+.tab.dragging { opacity: 0.8; }
+
+/* --- Unified Ellipsis Menu Styles (applies to both list and task menus) --- */
+.menu-button {
+  background: transparent;
+  border: none;
+  color: #fff; /* white in dark mode by default */
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+html:not(.dark-mode) .menu-button {
+  color: #333; /* dark gray in light mode */
+}
+
+.menu-button:hover {
+  opacity: 0.8;
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  min-width: 140px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.menu.dark-mode {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.menu li:hover {
+  background: #e0e0e0;
+}
+
+.menu.dark-mode li:hover {
+  background: #444;
+}
+
+/* Ensure clickable ... icon alignment in tabs and tasks */
+.tab .menu-button,
+.task-item .menu-button {
+  margin-left: auto;
+}
