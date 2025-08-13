@@ -1,9 +1,17 @@
 {
   "name": "TimeTally",
   "short_name": "TimeTally",
-  "start_url": ".",
+  "description": "A powerful, tab-based time tracker with per-list beep & TTS options!",
+  "start_url": "https://woodtho.github.io/TimeTallyToo/ ",
+  "scope": "https://woodtho.github.io/TimeTallyToo/",  
   "display": "standalone",
-  "background_color": "#0f1115",
-  "theme_color": "#0f1115",
-  "icons": []
+  "background_color": "#f0f2f5",
+  "theme_color": "#2196f3",
+  "icons": [
+    {
+      "src": "img/playstore.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
 }
