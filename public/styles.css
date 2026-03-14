@@ -335,6 +335,20 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
   flex-shrink: 0;
 }
 
+/* Editing row: highlight and hide the side action column */
+.task-item.editing {
+  background: rgba(33, 150, 243, 0.05);
+  border-left: 3px solid #2196f3;
+  padding-left: 5px;
+}
+.task-item.editing.dark-mode {
+  background: rgba(100, 181, 246, 0.08);
+  border-left-color: #64b5f6;
+}
+.task-item.editing .task-actions {
+  display: none;
+}
+
 .task-actions button {
   border: none;
   border-radius: 4px;
@@ -516,6 +530,52 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
   color: #aaa;
 }
 
+.task-edit-unit-select {
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+.dark-mode .task-edit-unit-select {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.task-edit-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.task-edit-save,
+.task-edit-cancel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #fff;
+}
+
+.task-edit-save {
+  background: #4caf50;
+}
+.task-edit-save:hover { background: #43a047; }
+
+.task-edit-cancel {
+  background: #757575;
+}
+.task-edit-cancel:hover { background: #616161; }
+
 /* Help menu grid layout */
 .help-grid {
   display: grid;
@@ -695,11 +755,21 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
   .import-section {
     flex-direction: column;
   }
+  /* .task-actions intentionally not overridden here — the 768px block sets row layout
+     and takes precedence since it appears later in the file */
+}
 
-  .task-actions {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Header gear button for toggling options */
@@ -843,12 +913,7 @@ body.dark-mode {
 }
 
 .progress-container.dark-mode {
-  background: #333;
-  border-radius: 4px;
-  overflow: hidden;
-  height: 10px;
-  width: 100%;
-  margin-bottom: 10px;
+  background: #333; /* only override differs from light mode */
 }
 
 .progress-bar.dark-mode {
@@ -1016,8 +1081,17 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
 .controls-footer .controls {
   margin-bottom: 0;
 }
+.controls-footer {
+  margin-bottom: 24px;
+}
 .import-export {
+  padding-top: 16px;
   padding-bottom: 20px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 8px;
+}
+.container.dark-mode .import-export {
+  border-top-color: #333;
 }
 
 /* ===================================================
@@ -1238,7 +1312,8 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
 .container.dark-mode .empty-state { color: #666; }
 
 /* === Disabled task visual styling (item 4) === */
-.task-item.disabled { opacity: 0.45; }
+.task-item.disabled { cursor: default; }
+.task-item.disabled .task-details { opacity: 0.45; }
 .task-item.disabled .task-name { text-decoration: line-through; }
 
 /* === Panel animation (item 5) === */

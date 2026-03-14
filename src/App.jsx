@@ -105,8 +105,14 @@ function loadState() {
 }
 
 function serializeState(state) {
+  // Strip transient UI flags: editing on tasks, isListCreating
+  // showHelp / showOptions / dark are intentionally persisted (user preference)
+  const lists = {};
+  for (const [k, arr] of Object.entries(state.lists || {})) {
+    lists[k] = arr.map(({ editing: _editing, ...rest }) => rest);
+  }
   return JSON.stringify({
-    lists: state.lists,
+    lists,
     listOrder: state.listOrder,
     currentList: state.currentList,
     currentTaskIndex: state.currentTaskIndex,
@@ -114,7 +120,7 @@ function serializeState(state) {
     dark: state.dark,
     showHelp: state.showHelp,
     showOptions: state.showOptions,
-    isListCreating: state.isListCreating
+    // isListCreating intentionally omitted — always starts false
   });
 }
 
@@ -123,6 +129,22 @@ const affirmations = ["Great job!", "Well done!", "You did it!", "Keep it up!", 
 const secs = (n) => n;
 const mins = (n) => n * 60;
 const hours = (n) => n * 3600;
+
+function bestUnit(totalSeconds) {
+  if (totalSeconds >= 3600 && totalSeconds % 3600 === 0) return "hours";
+  if (totalSeconds >= 60 && totalSeconds % 60 === 0) return "minutes";
+  return "seconds";
+}
+function toDisplayTime(totalSeconds, unit) {
+  if (unit === "hours") return totalSeconds / 3600;
+  if (unit === "minutes") return totalSeconds / 60;
+  return totalSeconds;
+}
+function fromDisplayTime(value, unit) {
+  if (unit === "hours") return Number(value) * 3600;
+  if (unit === "minutes") return Number(value) * 60;
+  return Number(value);
+}
 
 function formatHMS(total) {
   const s = Math.max(0, Math.floor(total));
@@ -151,9 +173,21 @@ function sumEnabledRemaining(tasks) {
 }
 
 /* ----------------------------- YouTube embed helpers ------------------------------ */
+const YT_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+function safeYtId(id) {
+  return id && YT_ID_RE.test(id) ? id : null;
+}
+
 function ytIframeSrc(id) {
   // enablejsapi=1 allows control via postMessage; modest branding; no related; playsinline
   return `https://www.youtube.com/embed/${id}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1`;
+}
+
+/* Pure helper — takes an array directly, no state closure */
+function nextEnabledIndexFrom(arr, start) {
+  for (let k = start; k < arr.length; k++) if (arr[k].enabled) return k;
+  return -1;
 }
 
 function postToYouTubeIframe(iframe, func) {
@@ -161,7 +195,7 @@ function postToYouTubeIframe(iframe, func) {
   try {
     iframe?.contentWindow?.postMessage(
       JSON.stringify({ event: "command", func, args: [] }),
-      "*"
+      "https://www.youtube.com"
     );
   } catch {
     /* ignore */
@@ -181,6 +215,8 @@ export default function App() {
   const [renamingTab, setRenamingTab] = useState(null);   // list name being renamed
   const [renamingTabValue, setRenamingTabValue] = useState("");
   const cancelRenameRef = useRef(false);
+  const configRef = useRef(null);   // always-current config for timer callbacks
+  const voicesRef = useRef([]);     // always-current voices for speak() inside interval
   const saveTimerRef = useRef(null);   // debounced localStorage write handle
   const stateRef = useRef(state);      // always-current state for event handlers
   // Form input refs — avoids imperative document.getElementById reads
@@ -207,6 +243,8 @@ export default function App() {
 
   /* Keep stateRef current so event handlers always see the latest state */
   useEffect(() => { stateRef.current = state; }, [state]);
+  /* Keep voicesRef current so timer callbacks never use stale closures */
+  useEffect(() => { voicesRef.current = voices; }, [voices]);
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -286,20 +324,36 @@ export default function App() {
     };
   }, []);
 
-  /* Beep */
+  /* Beep — generated via Web Audio API, no external CDN dependency */
   useEffect(() => {
-    const a = new Audio("https://www.soundjay.com/buttons/beep-07a.mp3");
-    a.preload = "auto";
-    audioRef.current = a;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioRef.current = {
+        play: () => {
+          try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+          } catch { /* ignore if context is suspended */ }
+        }
+      };
+      return () => { try { ctx.close(); } catch { /* ignore */ } };
+    } catch { /* Web Audio not supported */ }
   }, []);
 
-  /* Voices */
+  /* Voices — use addEventListener to avoid overwriting other handlers */
   useEffect(() => {
     const loadVoices = () => setVoices(window.speechSynthesis?.getVoices?.() || []);
     loadVoices();
-    if (window.speechSynthesis?.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
+    window.speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", loadVoices);
   }, []);
 
   /* Auto-focus the new-list name input when the create row appears */
@@ -326,13 +380,18 @@ export default function App() {
     };
   }, []);
 
-  /* Derived */
-  const tasks = useMemo(() => state.lists[state.currentList] || [], [state]);
-  const config = useMemo(() => state.listConfigs[state.currentList] || defaultConfig(), [state]);
+  /* Derived — deps scoped to only the values that can change them */
+  const tasks = useMemo(() => state.lists[state.currentList] || [], [state.lists, state.currentList]);
+  const config = useMemo(() => state.listConfigs[state.currentList] || defaultConfig(), [state.listConfigs, state.currentList]);
+  /* Keep configRef current so timer callbacks never use stale closures */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { configRef.current = config; }, [config]);
 
   const progress = useMemo(() => {
-    const total = tasks.reduce((a, t) => a + (t.time || 0), 0);
-    const done = tasks.reduce((a, t) => a + (t.time - t.remaining), 0);
+    // Only count enabled tasks so disabled ones don't skew the bar
+    const enabled = tasks.filter((t) => t.enabled);
+    const total = enabled.reduce((a, t) => a + (t.time || 0), 0);
+    const done = enabled.reduce((a, t) => a + Math.max(0, t.time - t.remaining), 0);
     return total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
   }, [tasks]);
 
@@ -390,6 +449,7 @@ export default function App() {
 
   function deleteList(name) {
     if (state.listOrder.length <= 1) return;
+    if (name === state.currentList) pauseTimer();
     patch((n) => {
       delete n.lists[name];
       delete n.listConfigs[name];
@@ -509,33 +569,33 @@ export default function App() {
   }
 
   /* Timer + TTS */
+
+  /* speak and beep read from refs so they're safe to call inside the interval */
   function speak(text) {
-    if (!config.ttsEnabled || !text) return;
+    const cfg = configRef.current;
+    if (!cfg?.ttsEnabled || !text) return;
     const utter = new SpeechSynthesisUtterance(text);
-    const v = voices.find((x) => x.name === config.selectedVoiceName);
+    const v = voicesRef.current.find((x) => x.name === cfg.selectedVoiceName);
     if (v) utter.voice = v;
     window.speechSynthesis.speak(utter);
   }
 
   function beep() {
-    if (!config.beepEnabled) return;
+    if (!configRef.current?.beepEnabled) return;
     audioRef.current?.play?.();
   }
 
+  /* Kept for call-sites outside the interval that pass state directly */
   function nextEnabledIndex(start) {
-    const arr = state.lists[state.currentList] || [];
-    for (let k = start; k < arr.length; k++) if (arr[k].enabled) return k;
-    return -1;
+    return nextEnabledIndexFrom(stateRef.current.lists[stateRef.current.currentList] || [], start);
   }
 
   function taskTitleForTTS(task) {
-    // Do not read the URL; prefer a generic label if no better title is available
     if (isYouTubeUrl(task.name)) return "YouTube video";
     return task.name;
   }
 
   function pauseAllYouTube() {
-    // Pause all embedded players via postMessage
     try {
       const iframes = document.querySelectorAll('iframe[data-yt-frame="1"]');
       iframes.forEach((f) => postToYouTubeIframe(f, "pauseVideo"));
@@ -543,71 +603,108 @@ export default function App() {
   }
 
   function playYouTubeIfAny(idx) {
-    // Autoplay the current task's video if the task has a YT ID (works for imported & newly added)
-    const key = `${state.currentList}__${idx}`;
+    const key = `${stateRef.current.currentList}__${idx}`;
     const iframe = document.getElementById(`yt-iframe-${key}`);
     if (!iframe) return;
-    postToYouTubeIframe(iframe, "playVideo"); // request playback
+    postToYouTubeIframe(iframe, "playVideo");
   }
 
   function announceStart(task) {
+    const cfg = configRef.current;
     const dur = ttsDuration(task.remaining);
     const title = taskTitleForTTS(task);
-    if (config.ttsMode === "taskNamePlusDurationStart") speak(`Starting ${title} for ${dur}`);
-    else if (config.ttsMode === "taskNameStart") speak(`Starting ${title}`);
-    else if (config.ttsMode === "durationStart") speak(`Starting ${dur}`);
+    if (cfg?.ttsMode === "taskNamePlusDurationStart") speak(`Starting ${title} for ${dur}`);
+    else if (cfg?.ttsMode === "taskNameStart") speak(`Starting ${title}`);
+    else if (cfg?.ttsMode === "durationStart") speak(`Starting ${dur}`);
   }
 
   function announceComplete() {
-    if (config.ttsMode === "customCompletion") speak(config.ttsCustomMessage || "Task completed");
-    else if (config.ttsMode === "randomAffirmation") speak(affirmations[Math.floor(Math.random() * affirmations.length)]);
+    const cfg = configRef.current;
+    if (cfg?.ttsMode === "customCompletion") speak(cfg.ttsCustomMessage || "Task completed");
+    else if (cfg?.ttsMode === "randomAffirmation") speak(affirmations[Math.floor(Math.random() * affirmations.length)]);
   }
 
-  function startTimer() {
-    if (timerRef.current) return;
-    const startIndex = nextEnabledIndex(state.currentTaskIndex);
-    if (startIndex === -1) return;
-    patch((n) => { n.currentTaskIndex = startIndex; });
-    const current = (state.lists[state.currentList] || [])[startIndex];
-    announceStart(current);
-    pauseAllYouTube();           // ensure only the current video plays
-    playYouTubeIfAny(startIndex); // autoplay YT when starting the task
+  /* Core interval — extracted so both startTimer and completeEarly can reuse it */
+  function _startInterval() {
     lastTick.current = performance.now();
     setIsRunning(true);
 
     timerRef.current = setInterval(() => {
       const now = performance.now();
-      const dt = (now - (lastTick.current || now)) / 1000;
+      // Cap dt to 30 s so a throttled background tab can't skip a whole task in one tick
+      const dt = Math.min((now - (lastTick.current || now)) / 1000, 30);
       lastTick.current = now;
 
+      // Collect side-effects to fire OUTSIDE the setState updater (pure function requirement)
+      const sideEffects = [];
       let timerEnded = false;
+
       patch((n) => {
         const arr = n.lists[n.currentList];
-        const idx = n.currentTaskIndex;
-        const t = arr[idx];
-        if (!t) return;
-        t.remaining = Math.max(0, t.remaining - dt);
-        if (t.remaining <= 0) {
-          announceComplete();
-          beep();
-          const nxt = nextEnabledIndex(idx + 1);
-          if (nxt === -1) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-            pauseAllYouTube();           // stop any video when series ends
-            arr.forEach((x) => (x.remaining = x.time));
-            n.currentTaskIndex = 0;
-            timerEnded = true;
+        if (!arr) { timerEnded = true; return; }
+        let idx = n.currentTaskIndex;
+        let timeLeft = dt;
+
+        // Consume dt across multiple tasks to handle background-tab drift
+        while (timeLeft > 0) {
+          const t = arr[idx];
+          if (!t) { timerEnded = true; break; }
+
+          if (t.remaining <= timeLeft) {
+            timeLeft -= t.remaining;
+            t.remaining = 0;
+            sideEffects.push({ type: "complete" });
+
+            const nxt = nextEnabledIndexFrom(arr, idx + 1);
+            if (nxt === -1) {
+              arr.forEach((x) => (x.remaining = x.time));
+              n.currentTaskIndex = 0;
+              timerEnded = true;
+              break;
+            } else {
+              idx = nxt;
+              n.currentTaskIndex = nxt;
+              sideEffects.push({ type: "start", task: { ...arr[nxt] }, idx: nxt });
+            }
           } else {
-            n.currentTaskIndex = nxt;
-            announceStart(arr[nxt]);
-            pauseAllYouTube();
-            playYouTubeIfAny(nxt);      // autoplay next video's task if any
+            t.remaining -= timeLeft;
+            timeLeft = 0;
           }
         }
       });
-      if (timerEnded) setIsRunning(false);
+
+      // Fire side-effects now that we're outside the updater
+      for (const fx of sideEffects) {
+        if (fx.type === "complete") {
+          announceComplete();
+          beep();
+        } else if (fx.type === "start") {
+          pauseAllYouTube();
+          playYouTubeIfAny(fx.idx);
+          announceStart(fx.task);
+        }
+      }
+
+      if (timerEnded) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        pauseAllYouTube();
+        setIsRunning(false);
+      }
     }, 200);
+  }
+
+  function startTimer() {
+    if (timerRef.current) return;
+    const s = stateRef.current;
+    const arr = s.lists[s.currentList] || [];
+    const startIndex = nextEnabledIndexFrom(arr, s.currentTaskIndex);
+    if (startIndex === -1) return;
+    patch((n) => { n.currentTaskIndex = startIndex; });
+    announceStart(arr[startIndex]);
+    pauseAllYouTube();
+    playYouTubeIfAny(startIndex);
+    _startInterval();
   }
 
   function pauseTimer() {
@@ -615,32 +712,48 @@ export default function App() {
     clearInterval(timerRef.current);
     timerRef.current = null;
     setIsRunning(false);
-    pauseAllYouTube(); // pause any YT playback when pausing timer
+    pauseAllYouTube();
   }
 
   function skipTask() {
-    // Move to the next task but leave the current task's remaining time unchanged
-    const nxt = nextEnabledIndex(state.currentTaskIndex + 1);
-    if (nxt === -1) return;
+    const s = stateRef.current;
+    const arr = s.lists[s.currentList] || [];
+    const nxt = nextEnabledIndexFrom(arr, s.currentTaskIndex + 1);
+    if (nxt === -1) { showIoStatus("error", "No next task."); return; }
     const wasRunning = !!timerRef.current;
-    pauseAllYouTube(); // stop any current playback
+    pauseAllYouTube();
     if (wasRunning) {
-      lastTick.current = performance.now(); // avoid time jump
+      lastTick.current = performance.now();
       patch((n) => { n.currentTaskIndex = nxt; });
-      playYouTubeIfAny(nxt); // autoplay next if video
+      playYouTubeIfAny(nxt);
     } else {
       patch((n) => { n.currentTaskIndex = nxt; });
     }
   }
 
   function completeEarly() {
+    const wasRunning = !!timerRef.current;
     pauseTimer();
+    // Read synchronously via stateRef to avoid async setState race
+    const s = stateRef.current;
+    const arr = s.lists[s.currentList] || [];
+    const nxt = nextEnabledIndexFrom(arr, s.currentTaskIndex + 1);
     patch((n) => {
-      const arr = n.lists[n.currentList];
-      const t = arr[n.currentTaskIndex];
+      const t = n.lists[n.currentList][n.currentTaskIndex];
       if (t) t.remaining = 0;
+      if (nxt !== -1) {
+        n.currentTaskIndex = nxt;
+      } else {
+        n.lists[n.currentList].forEach((x) => (x.remaining = x.time));
+        n.currentTaskIndex = 0;
+      }
     });
-    startTimer();
+    if (wasRunning && nxt !== -1) {
+      announceStart(arr[nxt]);
+      pauseAllYouTube();
+      playYouTubeIfAny(nxt);
+      _startInterval();
+    }
   }
 
   function restartTimer() {
@@ -691,6 +804,11 @@ export default function App() {
   function onFileLoaded(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showIoStatus("error", "File too large (max 5 MB).");
+      e.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -1088,16 +1206,19 @@ export default function App() {
         </div>
       </div>
 
-      {/* ETA */}
-      <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
-        <div className={`estimated-finish${state.dark ? " dark-mode" : ""}`} id="estimatedFinishTime">
-          {etaText}
+      {/* ETA — only render when there is something to show */}
+      {etaText && (
+        <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
+          <div className={`estimated-finish${state.dark ? " dark-mode" : ""}`} id="estimatedFinishTime">
+            {etaText}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Task input */}
       <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
         <div className={`task-input${state.dark ? " dark-mode" : ""}`}>
+          <label htmlFor="taskName" className="sr-only">Task name or YouTube URL</label>
           <input
             type="text"
             id="taskName"
@@ -1105,6 +1226,7 @@ export default function App() {
             placeholder="Task Name or YouTube URL"
             onKeyDown={(e) => { if (e.key === "Enter") taskTimeRef.current?.focus(); }}
           />
+          <label htmlFor="taskTime" className="sr-only">Duration</label>
           <input
             type="number"
             id="taskTime"
@@ -1117,7 +1239,7 @@ export default function App() {
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
           </select>
-          <button onClick={addTaskUI} title="Add Task">
+          <button onClick={addTaskUI} title="Add Task" aria-label="Add task">
             <i className="fas fa-plus" />
           </button>
         </div>
@@ -1127,10 +1249,28 @@ export default function App() {
       <ul id="taskList" ref={listRef}>
         {tasks.map((t, i) => {
           const isCurrent = i === state.currentTaskIndex;
-          const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${state.dark ? " dark-mode" : ""}`;
-          // Robust: compute ytId from meta first, otherwise from the name if it is a URL
-          const ytId = t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null);
+          const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${state.dark ? " dark-mode" : ""}`;
+          // Validate ytId against the strict 11-char regex before embedding
+          const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
           const key = `${state.currentList}__${i}`;
+
+          const saveEdit = (e) => {
+            e?.stopPropagation();
+            const ev = editValues[i] || {};
+            const newName = String(ev.name ?? t.name).trim();
+            const newTime = fromDisplayTime(ev.time ?? t.time, ev.unit || "seconds");
+            if (newName && newTime > 0) editTask(i, { name: newName, time: newTime });
+            editTask(i, { editing: false });
+            setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
+            setMenuOpenTask(null);
+          };
+          const cancelEdit = (e) => {
+            e?.stopPropagation();
+            editTask(i, { editing: false });
+            setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
+            setMenuOpenTask(null);
+          };
+
           return (
             <li
               key={i}
@@ -1142,6 +1282,7 @@ export default function App() {
               onPointerCancel={onTaskPointerUp}
               onClick={(e) => {
                 if (e.target.closest(".task-actions")) return;
+                if (!t.enabled) return;
                 setMenuOpenTask(null);
                 patch((n) => { n.currentTaskIndex = i; });
               }}
@@ -1162,6 +1303,7 @@ export default function App() {
                       value={editValues[i]?.name ?? t.name}
                       onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), name: e.target.value } }))}
                       placeholder="Task name or YouTube URL"
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(e); } else if (e.key === "Escape") cancelEdit(e); }}
                       autoFocus
                     />
                     <div className="task-edit-time-row">
@@ -1169,9 +1311,27 @@ export default function App() {
                         type="number"
                         value={editValues[i]?.time ?? t.time}
                         onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), time: e.target.value } }))}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(e); } else if (e.key === "Escape") cancelEdit(e); }}
                         min="1"
                       />
-                      <span className="task-edit-unit">seconds total</span>
+                      <select
+                        className="task-edit-unit-select"
+                        value={editValues[i]?.unit ?? "seconds"}
+                        onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), unit: e.target.value } }))}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <option value="seconds">Seconds</option>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                      </select>
+                    </div>
+                    <div className="task-edit-actions">
+                      <button className="task-edit-save" onClick={saveEdit}>
+                        <i className="fas fa-check" /> Save
+                      </button>
+                      <button className="task-edit-cancel" onClick={cancelEdit}>
+                        <i className="fas fa-times" /> Cancel
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -1231,7 +1391,8 @@ export default function App() {
                     <button
                       className="menu-item"
                       onClick={() => {
-                        setEditValues((prev) => ({ ...prev, [i]: { name: t.name, time: t.time } }));
+                        const unit = bestUnit(t.time);
+                        setEditValues((prev) => ({ ...prev, [i]: { name: t.name, time: toDisplayTime(t.time, unit), unit } }));
                         editTask(i, { editing: true });
                         setMenuOpenTask(null);
                       }}
@@ -1247,37 +1408,6 @@ export default function App() {
                   </div>
                 )}
 
-                {t.editing && (
-                  <>
-                    <button
-                      title="Save"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const ev = editValues[i] || {};
-                        const newName = String(ev.name ?? t.name).trim();
-                        const newTime = Number(ev.time ?? t.time);
-                        if (newName && newTime > 0) editTask(i, { name: newName, time: newTime });
-                        editTask(i, { editing: false });
-                        setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
-                        setMenuOpenTask(null);
-                      }}
-                    >
-                      <i className="fas fa-save" />
-                    </button>
-                    <button
-                      className="btn-cancel"
-                      title="Cancel"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editTask(i, { editing: false });
-                        setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
-                        setMenuOpenTask(null);
-                      }}
-                    >
-                      <i className="fas fa-times" />
-                    </button>
-                  </>
-                )}
               </div>
             </li>
           );
@@ -1317,13 +1447,14 @@ export default function App() {
             className={isRunning ? "btn-pause" : "btn-start"}
             onClick={isRunning ? pauseTimer : startTimer}
             title={isRunning ? "Pause Timer" : "Start Timer"}
+            aria-label={isRunning ? "Pause timer" : "Start timer"}
           >
             <i className={`fas fa-${isRunning ? "pause" : "play"}`} />
             {isRunning ? " Pause" : " Start"}
           </button>
-          <button className="btn-skip" onClick={skipTask} title="Skip Current Task"><i className="fas fa-forward" /> Skip</button>
-          <button className="btn-complete" onClick={completeEarly} title="Complete Early"><i className="fas fa-check" /> Complete</button>
-          <button className="btn-red" onClick={restartTimer} title="Restart All Tasks"><i className="fas fa-undo-alt" /> Restart</button>
+          <button className="btn-skip" onClick={skipTask} title="Skip Current Task" aria-label="Skip current task"><i className="fas fa-forward" /> Skip</button>
+          <button className="btn-complete" onClick={completeEarly} title="Complete Early" aria-label="Complete current task early"><i className="fas fa-check" /> Complete</button>
+          <button className="btn-red" onClick={restartTimer} title="Restart All Tasks" aria-label="Restart all tasks"><i className="fas fa-undo-alt" /> Restart</button>
         </div>
 
       </div>
