@@ -298,7 +298,7 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 /* Task list styling */
 #taskList {
   list-style: none;
-  padding: 0;
+  padding: 0 0 80px 0;
   margin: 0;
 }
 
@@ -397,7 +397,7 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
   background: #ddd;
   border-radius: 4px;
   overflow: hidden;
-  height: 8px;
+  height: 10px;
   width: 100%;
   margin-bottom: 10px;
 }
@@ -406,6 +406,7 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
   background: #4caf50;
   height: 100%;
   transition: width 0.3s ease;
+  border-radius: 5px;
 }
 
 .timer-info {
@@ -845,7 +846,7 @@ body.dark-mode {
   background: #333;
   border-radius: 4px;
   overflow: hidden;
-  height: 8px;
+  height: 10px;
   width: 100%;
   margin-bottom: 10px;
 }
@@ -884,8 +885,8 @@ body.dark-mode {
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  background: #555;
-  color: #fff;
+  background: #2a2a2a;
+  color: #eee;
 }
 
 .timer-info.dark-mode {
@@ -936,8 +937,10 @@ body.dark-mode {
 /* Ellipsis buttons: default white, no background; tasks in light mode should appear black */
 .ellipsis-button { color: #fff; } /* default white */
 html:not(.dark-mode) .task-actions .ellipsis-button { color: #000; } /* black for task ellipsis in light mode */
-/* Keep tabs' ellipsis white in both modes for contrast */
-.tab .ellipsis-button { color: #fff; }
+/* Keep tabs' ellipsis visible in both modes for contrast */
+.tab .ellipsis-button { color: #555; }
+.tab.active .ellipsis-button { color: #fff; }
+html.dark-mode .tab .ellipsis-button { color: #aaa; }
 
 /* Remove hover background to keep "no background" appearance */
 .icon-button:hover { opacity: 0.8; background: transparent; }
@@ -1204,5 +1207,82 @@ html:not(.dark-mode) .task-actions .ellipsis-button { color: #000; } /* black fo
   }
   .import-export-buttons > * {
     flex: 1 1 130px;
+  }
+}
+
+/* === Remaining countdown in sticky footer (item 2) === */
+.timer-remaining {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #2196f3;
+  letter-spacing: 0.05em;
+}
+.timer-section.dark-mode .timer-remaining { color: #90caf9; }
+
+/* === Empty state (item 3) === */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: #aaa;
+  font-style: italic;
+  font-size: 14px;
+}
+.empty-state i {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 10px;
+  opacity: 0.4;
+}
+.empty-state p { margin: 0; }
+.container.dark-mode .empty-state { color: #666; }
+
+/* === Disabled task visual styling (item 4) === */
+.task-item.disabled { opacity: 0.45; }
+.task-item.disabled .task-name { text-decoration: line-through; }
+
+/* === Panel animation (item 5) === */
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.help-menu[style*="block"],
+.options-menu[style*="block"] {
+  animation: fadeSlideDown 0.18s ease;
+}
+
+/* === Running state indicator (item 9) === */
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+.controls-footer.running .progress-bar {
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+.controls-footer.running {
+  border-top-color: #2196f3;
+}
+.controls-footer.dark-mode.running {
+  border-top-color: #64b5f6;
+}
+
+/* === Dark mode option panel selects (item 11) === */
+.options-menu.dark-mode select,
+.options-menu.dark-mode input[type="text"] {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+/* === Desktop hover-only drag handles (item 12) === */
+@media (hover: hover) {
+  .drag-handle {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .task-item:hover .drag-handle {
+    opacity: 1;
   }
 }

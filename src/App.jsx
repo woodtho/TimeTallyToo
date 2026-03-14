@@ -754,7 +754,7 @@ export default function App() {
   return (
     <div className={containerClasses}>
       <header>
-        <h1>TimeTally</h1>
+        <h1>TimeTallyToo</h1>
         <div className="header-buttons">
           <button
             id="toggleOptionsButton"
@@ -1127,7 +1127,7 @@ export default function App() {
       <ul id="taskList" ref={listRef}>
         {tasks.map((t, i) => {
           const isCurrent = i === state.currentTaskIndex;
-          const itemCls = `task-item${isCurrent ? " current" : ""}${state.dark ? " dark-mode" : ""}`;
+          const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${state.dark ? " dark-mode" : ""}`;
           // Robust: compute ytId from meta first, otherwise from the name if it is a URL
           const ytId = t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null);
           const key = `${state.currentList}__${i}`;
@@ -1283,9 +1283,15 @@ export default function App() {
           );
         })}
       </ul>
+      {tasks.length === 0 && (
+        <div className="empty-state">
+          <i className="fas fa-list-check" />
+          <p>No tasks yet. Add one above to get started.</p>
+        </div>
+      )}
 
       {/* Sticky controls footer */}
-      <div className={`controls-footer${state.dark ? " dark-mode" : ""}`}>
+      <div className={`controls-footer${state.dark ? " dark-mode" : ""}${isRunning ? " running" : ""}`}>
 
         {/* Timer */}
         <div className={`timer-section${state.dark ? " dark-mode" : ""}`}>
@@ -1297,6 +1303,9 @@ export default function App() {
               {tasks[state.currentTaskIndex]
                 ? (isYouTubeUrl(tasks[state.currentTaskIndex].name) ? "YouTube video" : tasks[state.currentTaskIndex].name)
                 : "Ready"}
+            </div>
+            <div className="timer-remaining">
+              {formatHMS(tasks[state.currentTaskIndex]?.remaining ?? 0)}
             </div>
             <div id="timerPercent" className="timer-percent">{progress}%</div>
           </div>
