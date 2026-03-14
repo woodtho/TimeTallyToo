@@ -5,7 +5,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #f0f2f5;
   color: #333;
 }
@@ -73,91 +73,186 @@ h1 {
   color: #333;
 }
 
-/* Tabs container */
+/* === Tab bar === */
 .tabs-container {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 15px;
-  gap: 5px;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e8eaf0;
+  margin-bottom: 14px;
+}
+html.dark-mode .tabs-container {
+  border-bottom-color: #2a2a2a;
 }
 
-/* Each tab is draggable */
 .tab {
   display: flex;
   align-items: center;
-  background: #2196f3;
-  color: #fff;
-  padding: 8px 10px;
-  border-radius: 4px;
-  cursor: move; /* indicates draggable */
+  gap: 5px;
+  background: transparent;
+  color: #555;
+  padding: 5px 8px 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
   position: relative;
   user-select: none;
+  border: 1.5px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-
+.tab:hover {
+  background: rgba(33, 150, 243, 0.1);
+  color: #1976d2;
+}
 .tab.active {
-  background: #1976d2; /* darker for active tab */
+  background: #2196f3;
+  color: #fff;
+  cursor: pointer;
 }
-
+.tab.active:hover {
+  background: #1e88e5;
+}
 .tab.dragging {
-  opacity: 0.5;
-  border: 2px dashed #ccc;
+  opacity: 0.55;
+  outline: 2px dashed #2196f3;
+  outline-offset: 1px;
 }
 
+/* Dark mode tabs */
+html.dark-mode .tab        { color: #888; }
+html.dark-mode .tab:hover  { background: rgba(144, 202, 249, 0.1); color: #90caf9; }
+html.dark-mode .tab.active { background: #1565c0; color: #fff; }
+html.dark-mode .tab.active:hover { background: #1976d2; }
+
+/* Tab name */
 .tab-name {
-  margin-right: 6px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Task count badge */
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tab.active .tab-count              { background: rgba(255, 255, 255, 0.28); }
+html.dark-mode .tab .tab-count      { background: rgba(255, 255, 255, 0.08); }
+html.dark-mode .tab.active .tab-count { background: rgba(255, 255, 255, 0.22); }
+
+/* Tab ellipsis — hidden until hover/focus; always visible on active tab */
+.tab-menu-btn {
+  opacity: 0;
+  flex-shrink: 0;
+  padding: 2px 3px;
+  transition: opacity 0.12s;
+}
+.tab:hover .tab-menu-btn,
+.tab.active .tab-menu-btn,
+.tab:focus-within .tab-menu-btn { opacity: 1; }
+
+/* Rename input inside the tab pill */
 .tab-edit-input {
-  min-width: 100px;
-  padding: 3px 5px;
+  min-width: 72px;
+  max-width: 120px;
+  padding: 1px 4px;
   border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  outline: none;
 }
+.tab-edit-input::placeholder { color: rgba(255, 255, 255, 0.55); }
 
-/* The "Add new list" button */
+/* Add-list button — small dashed circle at end of tab row */
 .tab-add-btn {
-  background: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.tab-add-btn:hover {
-  background: #43a047;
-}
-
-/* Fields for creating a new list */
-#listCreateFields {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-#createListName {
-  min-width: 120px;
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-#listCreateFields button {
-  background: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 8px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: #2196f3;
+  border: 1.5px dashed #2196f3;
+  border-radius: 50%;
+  font-size: 13px;
   cursor: pointer;
-  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
+.tab-add-btn:hover { background: rgba(33, 150, 243, 0.1); }
+html.dark-mode .tab-add-btn       { color: #90caf9; border-color: #90caf9; }
+html.dark-mode .tab-add-btn:hover { background: rgba(144, 202, 249, 0.1); }
 
-#listCreateFields button:hover {
-  background: #43a047;
+/* Inline list-creation chip — animates in alongside the other tabs */
+.tab-create-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(33, 150, 243, 0.07);
+  border: 1.5px solid #2196f3;
+  border-radius: 20px;
+  padding: 3px 5px 3px 12px;
+  animation: tab-pop-in 0.15s ease;
 }
+html.dark-mode .tab-create-inline {
+  background: rgba(144, 202, 249, 0.06);
+  border-color: #1976d2;
+}
+@keyframes tab-pop-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.tab-create-inline input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  width: 96px;
+  padding: 2px 0;
+}
+html.dark-mode .tab-create-inline input { color: #eee; }
+.tab-create-inline input::placeholder   { color: #aaa; }
+
+.tab-create-save,
+.tab-create-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.tab-create-save            { color: #2196f3; }
+.tab-create-save:hover      { background: rgba(33, 150, 243, 0.15); }
+.tab-create-cancel          { color: #f44336; }
+.tab-create-cancel:hover    { background: rgba(244, 67, 54, 0.12); }
+html.dark-mode .tab-create-save   { color: #90caf9; }
+html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 
 .btn-cancel {
   background: #f44336 !important;
@@ -246,6 +341,26 @@ h1 {
   padding: 5px;
   cursor: pointer;
   font-size: 12px;
+}
+
+/* Drag handle for task reordering */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0 10px 0 4px;
+  cursor: grab;
+  color: #bbb;
+  touch-action: none;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: 14px;
+}
+.drag-handle:active {
+  cursor: grabbing;
+  color: #888;
 }
 
 /* Remove background on hover for ellipsis triggers to keep them clean */
@@ -343,6 +458,146 @@ h1 {
 .btn-red { background: #f44336; }
 .btn-red:hover { background: #e53935; }
 
+/* Current task highlight */
+.task-item.current {
+  background: rgba(33, 150, 243, 0.08);
+  border-left: 3px solid #2196f3;
+  padding-left: 5px;
+}
+.task-item.current.dark-mode {
+  background: rgba(100, 181, 246, 0.12);
+  border-left: 3px solid #64b5f6;
+}
+
+/* Inline task editing */
+.task-edit-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 2px 0;
+}
+
+.task-edit-inline input {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dark-mode .task-edit-inline input {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.task-edit-time-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-edit-time-row input {
+  max-width: 80px;
+  width: auto !important;
+}
+
+.task-edit-unit {
+  font-size: 12px;
+  color: #777;
+}
+
+.dark-mode .task-edit-unit {
+  color: #aaa;
+}
+
+/* Help menu grid layout */
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.help-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.help-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.help-menu.dark-mode .help-card {
+  background: #333;
+  border-color: #555;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.help-list li {
+  margin-bottom: 4px;
+}
+
+.kbd {
+  display: inline-block;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dark-mode .kbd {
+  background: #444;
+  border-color: #666;
+  color: #eee;
+}
+
+.btn-chip {
+  display: inline-block;
+  background: #2196f3;
+  color: #fff;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dots {
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* Current task label in timer */
+.timer-task-name {
+  font-weight: bold;
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.timer-section.dark-mode .timer-task-name {
+  color: #eee;
+}
+
 /* Import/Export */
 .import-export { margin-top: 25px; }
 
@@ -410,6 +665,26 @@ h1 {
 }
 
 .import-section input[type="file"]::-webkit-file-upload-button:hover { background: #00897b; }
+
+.import-export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.io-status {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+.io-status--success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.io-status--error   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.io-status.dark-mode.io-status--success { background: #1b3a1f; color: #81c784; border-color: #388e3c; }
+.io-status.dark-mode.io-status--error   { background: #3b1a1a; color: #ef9a9a; border-color: #c62828; }
 
 /* Responsive adjustments */
 @media (max-width: 400px) {
@@ -560,13 +835,7 @@ body.dark-mode {
   border-color: #444;
 }
 
-.tab.dark-mode {
-  background: #333;
-}
-
-.tab.active.dark-mode {
-  background: #444;
-}
+/* .tab dark-mode rules moved to html.dark-mode .tab selectors above */
 
 .task-item.dark-mode {
   border-bottom: 1px solid #444;
@@ -720,3 +989,220 @@ html:not(.dark-mode) .task-actions .ellipsis-button { color: #000; } /* black fo
 /* Dragging hint */
 .task-item.dragging,
 .tab.dragging { opacity: 0.8; }
+
+/* ===================================================
+   Sticky controls footer
+   =================================================== */
+.controls-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-top: 1px solid #e0e0e0;
+  z-index: 100;
+}
+.controls-footer.dark-mode {
+  background: #1e1e1e;
+  border-top-color: #333;
+}
+.controls-footer .timer-section {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.controls-footer .controls {
+  margin-bottom: 0;
+}
+.import-export {
+  padding-bottom: 20px;
+}
+
+/* ===================================================
+   Mobile layout (768px and below)
+   =================================================== */
+@media (max-width: 768px) {
+
+  /* --- Container: edge-to-edge --- */
+  .container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 12px 14px;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  /* --- Header: compact --- */
+  header {
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 18px;
+    margin-bottom: 0;
+  }
+  .gear-button,
+  .help-button,
+  .dark-mode-button {
+    font-size: 20px;
+    padding: 4px 6px;
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  /* --- Section boxes: tighter on mobile --- */
+  .section-box {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .estimated-finish {
+    margin-top: 0;
+    font-size: 14px;
+  }
+
+  /* --- Tabs: wrap into rows --- */
+  .tabs-container {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .tab {
+    font-size: 12px;
+    padding: 4px 7px 4px 10px;
+  }
+  .tab-name {
+    max-width: 100px;
+  }
+  .tab-add-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* --- Task input: name full-width, then time + unit + btn on one row --- */
+  .task-input {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .task-input input[type="text"] {
+    flex: 1 1 100%;
+    font-size: 16px; /* prevents iOS auto-zoom */
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  .task-input input[type="number"] {
+    flex: 1 1 64px;
+    min-width: 64px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .task-input select {
+    flex: 2 1 110px;
+    min-width: 110px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .task-input button {
+    flex: 0 0 44px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+  }
+
+  /* --- Touch targets: 44px min per Apple HIG --- */
+  .controls button,
+  .btn-export,
+  #importFileBttn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* --- Controls footer: icon-only, spread full width --- */
+  .controls {
+    gap: 6px;
+    flex-wrap: nowrap;
+    flex-direction: row;
+  }
+  .controls button {
+    flex: 1 1 0;
+    justify-content: center;
+    font-size: 0; /* hide text labels — icons only */
+    padding: 0;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+  .controls button i {
+    font-size: 18px;
+  }
+
+  /* --- Task items: generous touch padding --- */
+  .task-item {
+    padding: 10px 8px;
+  }
+  .task-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  /* --- Timer section: compact --- */
+  .timer-section {
+    padding: 8px 10px;
+  }
+  .timer-info {
+    font-size: 13px;
+  }
+
+  /* --- iPhone home bar safe area --- */
+  .controls-footer {
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+
+  /* --- Options/help menus: bleed edge-to-edge --- */
+  .options-menu,
+  .help-menu {
+    border-radius: 0;
+    margin-left: -14px;
+    margin-right: -14px;
+    border-left: none;
+    border-right: none;
+  }
+
+  /* Options selects/inputs fill available width */
+  .option-row {
+    flex-wrap: wrap;
+  }
+  .options-menu select,
+  .options-menu input[type="text"] {
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  /* Help grid: single column */
+  .help-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .help-card {
+    padding: 10px 12px;
+  }
+
+  /* --- Import/export: side-by-side --- */
+  .import-export {
+    margin-top: auto;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .import-export-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .import-export-buttons > * {
+    flex: 1 1 130px;
+  }
+}

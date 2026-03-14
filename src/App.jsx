@@ -104,25 +104,18 @@ function loadState() {
   }
 }
 
-let saveTimer = null;
-function saveState(state) {
-  // Debounced save to reduce churn during ticking, while staying responsive
-  const doSave = () => {
-    const slim = JSON.stringify({
-      lists: state.lists,
-      listOrder: state.listOrder,
-      currentList: state.currentList,
-      currentTaskIndex: state.currentTaskIndex,
-      listConfigs: state.listConfigs,
-      dark: state.dark,
-      showHelp: state.showHelp,
-      showOptions: state.showOptions,
-      isListCreating: state.isListCreating
-    });
-    localStorage.setItem(LS_KEY, slim); // write-through to storage for tab reloads
-  };
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 150); // small debounce window
+function serializeState(state) {
+  return JSON.stringify({
+    lists: state.lists,
+    listOrder: state.listOrder,
+    currentList: state.currentList,
+    currentTaskIndex: state.currentTaskIndex,
+    listConfigs: state.listConfigs,
+    dark: state.dark,
+    showHelp: state.showHelp,
+    showOptions: state.showOptions,
+    isListCreating: state.isListCreating
+  });
 }
 
 /* ----------------------------- Utilities ------------------------------ */
@@ -181,6 +174,20 @@ export default function App() {
   const [voices, setVoices] = useState([]);
   const [menuOpenTask, setMenuOpenTask] = useState(null);   // index of open task menu
   const [menuOpenTab, setMenuOpenTab] = useState(null);     // name of list with open tab menu
+  const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
+  const ioStatusTimerRef = useRef(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [editValues, setEditValues] = useState({});       // { [taskIndex]: { name, time } }
+  const [renamingTab, setRenamingTab] = useState(null);   // list name being renamed
+  const [renamingTabValue, setRenamingTabValue] = useState("");
+  const cancelRenameRef = useRef(false);
+  const saveTimerRef = useRef(null);   // debounced localStorage write handle
+  const stateRef = useRef(state);      // always-current state for event handlers
+  // Form input refs — avoids imperative document.getElementById reads
+  const taskNameRef = useRef(null);
+  const taskTimeRef = useRef(null);
+  const timeUnitRef = useRef(null);
+  const createListNameRef = useRef(null);
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const lastTick = useRef(null);
@@ -198,22 +205,34 @@ export default function App() {
     document.body.classList.toggle("dark-mode", !!state.dark);
   }, [state.dark]);
 
-  /* Persist (debounced) + cross-tab broadcast */
+  /* Keep stateRef current so event handlers always see the latest state */
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  /* Persist (debounced) + cross-tab broadcast.
+     State is carried directly in the BC message — no race with the debounced LS write. */
   useEffect(() => {
-    saveState(state); // debounced localStorage persistence
+    const serialized = serializeState(state);
+    // Debounce localStorage writes to avoid thrashing during rapid timer ticks
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      try { localStorage.setItem(LS_KEY, serialized); } catch { /* ignore */ }
+    }, 500);
+    // Broadcast full serialized state immediately so other tabs don't read stale LS
     try {
-      bcRef.current?.postMessage({ type: "STATE_PATCHED" }); // lightweight nudge; other tabs reload from LS
+      bcRef.current?.postMessage({ type: "STATE_UPDATE", data: serialized });
     } catch { /* ignore */ }
   }, [state]);
 
-  /* Before unload: final flush */
+  /* Before unload: flush any pending debounced save immediately.
+     Uses stateRef so we don't re-register this handler on every state change. */
   useEffect(() => {
     const handler = () => {
-      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+      clearTimeout(saveTimerRef.current);
+      try { localStorage.setItem(LS_KEY, serializeState(stateRef.current)); } catch { /* ignore */ }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [state]);
+  }, []); // empty deps — intentional; stateRef stays current via the effect above
 
   /* Cross-tab synchronization: storage + BroadcastChannel */
   useEffect(() => {
@@ -238,9 +257,17 @@ export default function App() {
     try {
       bcRef.current = new BroadcastChannel(SYNC_CH);
       bcRef.current.onmessage = (msg) => {
-        if (msg?.data?.type === "STATE_PATCHED") {
-          const next = loadState();
-          setState((_) => next);
+        // STATE_UPDATE carries the full serialized state — no LS read needed, no race condition
+        if (msg?.data?.type === "STATE_UPDATE" && msg.data.data) {
+          try {
+            const incoming = JSON.parse(msg.data.data);
+            const merged = {
+              ...defaultState(),
+              ...incoming,
+              listConfigs: { default: defaultConfig(), ...(incoming?.listConfigs || {}) }
+            };
+            setState(() => migrateYouTubeMeta(merged));
+          } catch { /* ignore */ }
         }
       };
     } catch { /* unsupported */ }
@@ -248,6 +275,14 @@ export default function App() {
     return () => {
       window.removeEventListener("storage", onStorage);
       try { bcRef.current?.close?.(); } catch { /* ignore */ }
+    };
+  }, []);
+
+  /* Cleanup on unmount — prevent interval and debounce leaks */
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current);
+      clearTimeout(saveTimerRef.current);
     };
   }, []);
 
@@ -266,6 +301,15 @@ export default function App() {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
   }, []);
+
+  /* Auto-focus the new-list name input when the create row appears */
+  useEffect(() => {
+    if (state.isListCreating) {
+      // Defer one frame so the element is visible before focusing
+      const id = requestAnimationFrame(() => createListNameRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+  }, [state.isListCreating]);
 
   /* Close menus on outside click/tap */
   useEffect(() => {
@@ -365,9 +409,9 @@ export default function App() {
 
   /* Tasks */
   function addTaskUI() {
-    const name = document.getElementById("taskName").value.trim();
-    const amt = Number(document.getElementById("taskTime").value);
-    const unit = document.getElementById("timeUnit").value;
+    const name = (taskNameRef.current?.value ?? "").trim();
+    const amt = Number(taskTimeRef.current?.value ?? 0);
+    const unit = timeUnitRef.current?.value ?? "minutes";
     if (!name || !amt || amt <= 0) return;
     const toSeconds = unit === "seconds" ? secs : unit === "minutes" ? mins : hours;
     const t = toSeconds(amt);
@@ -377,8 +421,9 @@ export default function App() {
       const norm = normalizeTaskFromName(name, t);
       listTasks.push(norm);
     });
-    document.getElementById("taskName").value = "";
-    document.getElementById("taskTime").value = "";
+    if (taskNameRef.current) taskNameRef.current.value = "";
+    if (taskTimeRef.current) taskTimeRef.current.value = "";
+    taskNameRef.current?.focus();
   }
 
   function removeTask(i) {
@@ -435,17 +480,8 @@ export default function App() {
   }
 
   function onTaskPointerDown(i, e) {
-    // ignore drags starting on interactive elements to keep clicks working on desktop
-    if (
-      e.target.closest('[data-menu-button="true"]') ||
-      e.target.closest('[data-menu-root="true"]') ||
-      e.target.closest(".enable-checkbox-wrapper") ||
-      e.target.closest("button") ||
-      e.target.closest("a") ||
-      e.target.closest("input") ||
-      e.target.closest("select") ||
-      e.target.closest("label")
-    ) {
+    // only initiate drag when the pointer lands on the drag handle
+    if (!e.target.closest('[data-drag-handle="true"]')) {
       return;
     }
     pointerActive.current = true;
@@ -537,12 +573,14 @@ export default function App() {
     pauseAllYouTube();           // ensure only the current video plays
     playYouTubeIfAny(startIndex); // autoplay YT when starting the task
     lastTick.current = performance.now();
+    setIsRunning(true);
 
     timerRef.current = setInterval(() => {
       const now = performance.now();
       const dt = (now - (lastTick.current || now)) / 1000;
       lastTick.current = now;
 
+      let timerEnded = false;
       patch((n) => {
         const arr = n.lists[n.currentList];
         const idx = n.currentTaskIndex;
@@ -559,6 +597,7 @@ export default function App() {
             pauseAllYouTube();           // stop any video when series ends
             arr.forEach((x) => (x.remaining = x.time));
             n.currentTaskIndex = 0;
+            timerEnded = true;
           } else {
             n.currentTaskIndex = nxt;
             announceStart(arr[nxt]);
@@ -567,6 +606,7 @@ export default function App() {
           }
         }
       });
+      if (timerEnded) setIsRunning(false);
     }, 200);
   }
 
@@ -574,6 +614,7 @@ export default function App() {
     if (!timerRef.current) return;
     clearInterval(timerRef.current);
     timerRef.current = null;
+    setIsRunning(false);
     pauseAllYouTube(); // pause any YT playback when pausing timer
   }
 
@@ -611,6 +652,12 @@ export default function App() {
   }
 
   /* Import / Export */
+  function showIoStatus(type, msg) {
+    clearTimeout(ioStatusTimerRef.current);
+    setIoStatus({ type, msg });
+    ioStatusTimerRef.current = setTimeout(() => setIoStatus(null), 3000);
+  }
+
   function exportTasksToXML() {
     const doc = document.implementation.createDocument("", "", null);
     const root = doc.createElement("timetally");
@@ -638,6 +685,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement("a"), { href: url, download: "timetally_tasks.xml" });
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showIoStatus('success', 'Exported!');
   }
 
   function onFileLoaded(e) {
@@ -648,8 +696,19 @@ export default function App() {
       try {
         const text = String(reader.result || "");
         const doc = new DOMParser().parseFromString(text, "application/xml");
+        if (doc.querySelector("parsererror")) {
+          showIoStatus('error', 'Invalid file format.');
+          e.target.value = "";
+          return;
+        }
         const listNodes = [...doc.querySelectorAll("list")];
-        if (!listNodes.length) return;
+        if (!listNodes.length) {
+          showIoStatus('error', 'No tasks found in file.');
+          e.target.value = "";
+          return;
+        }
+        let taskCount = 0;
+        listNodes.forEach((ln) => { taskCount += ln.querySelectorAll("task").length; });
         patch((n) => {
           listNodes.forEach((ln) => {
             const name = ln.getAttribute("name") || "imported";
@@ -678,7 +737,12 @@ export default function App() {
             if (!n.listConfigs[name]) n.listConfigs[name] = defaultConfig();
           });
         });
-      } catch { /* ignore */ }
+        const listWord = listNodes.length === 1 ? 'list' : 'lists';
+        const taskWord = taskCount === 1 ? 'task' : 'tasks';
+        showIoStatus('success', `Imported ${listNodes.length} ${listWord} with ${taskCount} ${taskWord}.`);
+      } catch {
+        showIoStatus('error', 'Invalid file format.');
+      }
       e.target.value = "";
     };
     reader.readAsText(file);
@@ -714,7 +778,7 @@ export default function App() {
             title="Toggle Dark Mode"
             onClick={() => patch((n) => { n.dark = !n.dark; })}
           >
-            <i className="fas fa-moon" />
+            <i className={`fas fa-${state.dark ? "sun" : "moon"}`} />
           </button>
         </div>
       </header>
@@ -803,16 +867,16 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs + inline list creation */}
       <div id="tabsContainer" className="tabs-container">
         {state.listOrder.map((name, idx) => {
           const active = name === state.currentList;
-          const cls = `tab${active ? " active" : ""}${state.dark ? " dark-mode" : ""}`;
+          const taskCount = (state.lists[name] || []).length;
+          const cls = `tab${active ? " active" : ""}`;
           return (
             <div
               key={name}
               className={cls}
-              style={{ position: "relative" }}
               draggable
               data-list-name={name}
               onDragStart={(e) => { draggedTabIndex.current = idx; e.dataTransfer.effectAllowed = "move"; }}
@@ -831,10 +895,40 @@ export default function App() {
               }}
               title={name}
             >
-              <span className="tab-name">{name}</span>
+              {renamingTab === name ? (
+                <input
+                  type="text"
+                  className="tab-edit-input"
+                  value={renamingTabValue}
+                  onChange={(e) => setRenamingTabValue(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (renamingTabValue.trim()) renameList(name, renamingTabValue.trim());
+                      cancelRenameRef.current = true;
+                      setRenamingTab(null);
+                    } else if (e.key === "Escape") {
+                      cancelRenameRef.current = true;
+                      setRenamingTab(null);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!cancelRenameRef.current && renamingTabValue.trim()) {
+                      renameList(name, renamingTabValue.trim());
+                    }
+                    cancelRenameRef.current = false;
+                    setRenamingTab(null);
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span className="tab-name">{name}</span>
+              )}
+
+              {taskCount > 0 && <span className="tab-count">{taskCount}</span>}
 
               <button
-                className="icon-button ellipsis-button"
+                className="icon-button ellipsis-button tab-menu-btn"
                 title="List actions"
                 data-menu-button="true"
                 onClick={(e) => { e.stopPropagation(); setMenuOpenTab(menuOpenTab === name ? null : name); }}
@@ -852,8 +946,8 @@ export default function App() {
                   <button
                     className="menu-item"
                     onClick={() => {
-                      const nn = prompt("Rename list", name);
-                      if (nn && nn.trim()) renameList(name, nn.trim());
+                      setRenamingTab(name);
+                      setRenamingTabValue(name);
                       setMenuOpenTab(null);
                     }}
                   >
@@ -870,28 +964,50 @@ export default function App() {
             </div>
           );
         })}
-        <button
-          className="tab-add-btn"
-          title="Create a New List"
-          onClick={() => { setMenuOpenTab(null); patch((n) => { n.isListCreating = true; }); }}
-        >
-          <i className="fas fa-plus" /> New List
-        </button>
-      </div>
 
-      {/* Create list fields */}
-      <div id="listCreateFields" style={{ display: state.isListCreating ? "flex" : "none" }}>
-        <input type="text" id="createListName" placeholder="New list name" />
-        <button onClick={() => {
-          const val = document.getElementById("createListName").value.trim();
-          if (val) addList(val);
-          document.getElementById("createListName").value = "";
-        }}>
-          <i className="fas fa-save" />
-        </button>
-        <button className="btn-cancel" onClick={() => patch((n) => { n.isListCreating = false; })}>
-          <i className="fas fa-times" />
-        </button>
+        {/* Inline creation chip OR the + button */}
+        {state.isListCreating ? (
+          <div className="tab-create-inline">
+            <input
+              ref={createListNameRef}
+              placeholder="List name…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const val = (createListNameRef.current?.value ?? "").trim();
+                  if (val) { addList(val); if (createListNameRef.current) createListNameRef.current.value = ""; }
+                } else if (e.key === "Escape") {
+                  patch((n) => { n.isListCreating = false; });
+                }
+              }}
+            />
+            <button
+              className="tab-create-save"
+              title="Save list"
+              onClick={() => {
+                const val = (createListNameRef.current?.value ?? "").trim();
+                if (val) addList(val);
+                if (createListNameRef.current) createListNameRef.current.value = "";
+              }}
+            >
+              <i className="fas fa-check" />
+            </button>
+            <button
+              className="tab-create-cancel"
+              title="Cancel"
+              onClick={() => patch((n) => { n.isListCreating = false; })}
+            >
+              <i className="fas fa-times" />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="tab-add-btn"
+            title="New list"
+            onClick={() => { setMenuOpenTab(null); patch((n) => { n.isListCreating = true; }); }}
+          >
+            <i className="fas fa-plus" />
+          </button>
+        )}
       </div>
 
       {/* Options */}
@@ -982,9 +1098,21 @@ export default function App() {
       {/* Task input */}
       <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
         <div className={`task-input${state.dark ? " dark-mode" : ""}`}>
-          <input type="text" id="taskName" placeholder="Task Name or YouTube URL" />
-          <input type="number" id="taskTime" placeholder="Time" />
-          <select id="timeUnit" aria-label="Time Unit" defaultValue="minutes">
+          <input
+            type="text"
+            id="taskName"
+            ref={taskNameRef}
+            placeholder="Task Name or YouTube URL"
+            onKeyDown={(e) => { if (e.key === "Enter") taskTimeRef.current?.focus(); }}
+          />
+          <input
+            type="number"
+            id="taskTime"
+            ref={taskTimeRef}
+            placeholder="Time"
+            onKeyDown={(e) => { if (e.key === "Enter") addTaskUI(); }}
+          />
+          <select id="timeUnit" ref={timeUnitRef} aria-label="Time Unit" defaultValue="minutes">
             <option value="seconds">Seconds</option>
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
@@ -999,7 +1127,7 @@ export default function App() {
       <ul id="taskList" ref={listRef}>
         {tasks.map((t, i) => {
           const isCurrent = i === state.currentTaskIndex;
-          const itemCls = `task-item${state.dark ? " dark-mode" : ""}`;
+          const itemCls = `task-item${isCurrent ? " current" : ""}${state.dark ? " dark-mode" : ""}`;
           // Robust: compute ytId from meta first, otherwise from the name if it is a URL
           const ytId = t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null);
           const key = `${state.currentList}__${i}`;
@@ -1007,7 +1135,7 @@ export default function App() {
             <li
               key={i}
               className={itemCls}
-              style={{ touchAction: "none", position: "relative" }}
+              style={{ position: "relative" }}
               onPointerDown={(e) => onTaskPointerDown(i, e)}
               onPointerMove={onTaskPointerMove}
               onPointerUp={onTaskPointerUp}
@@ -1018,27 +1146,57 @@ export default function App() {
                 patch((n) => { n.currentTaskIndex = i; });
               }}
             >
+              <div
+                className="drag-handle"
+                data-drag-handle="true"
+                title="Drag to reorder"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <i className="fas fa-grip-vertical" />
+              </div>
               <div className="task-details">
-                <div className="task-name">
-                  {isCurrent ? "[Current] " : ""}
-                  {isYouTubeUrl(t.name) ? "YouTube video" : t.name}
-                </div>
-                <div className="task-time">({formatHMS(t.remaining)} remaining)</div>
-
-                {/* Embedded YouTube player */}
-                {ytId && (
-                  <div className="yt-embed-wrapper">
-                    <iframe
-                      id={`yt-iframe-${key}`}
-                      data-yt-frame="1"
-                      src={ytIframeSrc(ytId)}
-                      title="YouTube video"
-                      style={{ width: "100%", aspectRatio: "16 / 9", border: 0, pointerEvents: isCurrent ? "auto" : "none", opacity: isCurrent ? 1 : 0.9 }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
+                {t.editing ? (
+                  <div className="task-edit-inline" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      value={editValues[i]?.name ?? t.name}
+                      onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), name: e.target.value } }))}
+                      placeholder="Task name or YouTube URL"
+                      autoFocus
                     />
-                    {!isCurrent && <div className="yt-embed-hint">Select task to control playback</div>}
+                    <div className="task-edit-time-row">
+                      <input
+                        type="number"
+                        value={editValues[i]?.time ?? t.time}
+                        onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), time: e.target.value } }))}
+                        min="1"
+                      />
+                      <span className="task-edit-unit">seconds total</span>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="task-name">
+                      {isYouTubeUrl(t.name) ? "YouTube video" : t.name}
+                    </div>
+                    <div className="task-time">({formatHMS(t.remaining)} remaining)</div>
+
+                    {/* Embedded YouTube player */}
+                    {ytId && (
+                      <div className="yt-embed-wrapper">
+                        <iframe
+                          id={`yt-iframe-${key}`}
+                          data-yt-frame="1"
+                          src={ytIframeSrc(ytId)}
+                          title="YouTube video"
+                          style={{ width: "100%", aspectRatio: "16 / 9", border: 0, pointerEvents: isCurrent ? "auto" : "none", opacity: isCurrent ? 1 : 0.9 }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                        {!isCurrent && <div className="yt-embed-hint">Select task to control playback</div>}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1072,7 +1230,11 @@ export default function App() {
                   >
                     <button
                       className="menu-item"
-                      onClick={() => { editTask(i, { editing: true }); setMenuOpenTask(null); }}
+                      onClick={() => {
+                        setEditValues((prev) => ({ ...prev, [i]: { name: t.name, time: t.time } }));
+                        editTask(i, { editing: true });
+                        setMenuOpenTask(null);
+                      }}
                     >
                       <i className="fas fa-pen" /> Edit
                     </button>
@@ -1091,10 +1253,12 @@ export default function App() {
                       title="Save"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const nn = prompt("Task name (or YouTube URL)", t.name) ?? t.name;
-                        const nt = Number(prompt("Seconds (total time)", String(t.time)) ?? t.time);
-                        if (nn.trim() && nt > 0) editTask(i, { name: nn.trim(), time: nt });
+                        const ev = editValues[i] || {};
+                        const newName = String(ev.name ?? t.name).trim();
+                        const newTime = Number(ev.time ?? t.time);
+                        if (newName && newTime > 0) editTask(i, { name: newName, time: newTime });
                         editTask(i, { editing: false });
+                        setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
                         setMenuOpenTask(null);
                       }}
                     >
@@ -1103,7 +1267,12 @@ export default function App() {
                     <button
                       className="btn-cancel"
                       title="Cancel"
-                      onClick={(e) => { e.stopPropagation(); editTask(i, { editing: false }); setMenuOpenTask(null); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editTask(i, { editing: false });
+                        setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
+                        setMenuOpenTask(null);
+                      }}
                     >
                       <i className="fas fa-times" />
                     </button>
@@ -1115,36 +1284,49 @@ export default function App() {
         })}
       </ul>
 
-      {/* Timer */}
-      <div className={`timer-section${state.dark ? " dark-mode" : ""}`}>
-        <div className={`progress-container${state.dark ? " dark-mode" : ""}`}>
-          <div className={`progress-bar${state.dark ? " dark-mode" : ""}`} style={{ width: `${progress}%` }} />
-        </div>
-        <div className={`timer-info${state.dark ? " dark-mode" : ""}`}>
-          <div id="timerText" className="timer-text">Progress</div>
-          <div id="timerPercent" className="timer-percent">{progress}%</div>
-        </div>
-      </div>
+      {/* Sticky controls footer */}
+      <div className={`controls-footer${state.dark ? " dark-mode" : ""}`}>
 
-      {/* Controls */}
-      <div className="controls">
-        <button className="btn-start" onClick={startTimer} title="Start Timer"><i className="fas fa-play" /> Start</button>
-        <button className="btn-skip" onClick={skipTask} title="Skip Current Task"><i className="fas fa-forward" /> Skip</button>
-        <button className="btn-complete" onClick={completeEarly} title="Complete Early"><i className="fas fa-check" /> Complete</button>
-        <button className="btn-pause" onClick={pauseTimer} title="Pause Timer"><i className="fas fa-pause" /> Pause</button>
-        <button className="btn-red" onClick={restartTimer} title="Restart All Tasks"><i className="fas fa-undo-alt" /> Restart</button>
+        {/* Timer */}
+        <div className={`timer-section${state.dark ? " dark-mode" : ""}`}>
+          <div className={`progress-container${state.dark ? " dark-mode" : ""}`}>
+            <div className={`progress-bar${state.dark ? " dark-mode" : ""}`} style={{ width: `${progress}%` }} />
+          </div>
+          <div className={`timer-info${state.dark ? " dark-mode" : ""}`}>
+            <div id="timerText" className="timer-task-name">
+              {tasks[state.currentTaskIndex]
+                ? (isYouTubeUrl(tasks[state.currentTaskIndex].name) ? "YouTube video" : tasks[state.currentTaskIndex].name)
+                : "Ready"}
+            </div>
+            <div id="timerPercent" className="timer-percent">{progress}%</div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="controls">
+          <button
+            className={isRunning ? "btn-pause" : "btn-start"}
+            onClick={isRunning ? pauseTimer : startTimer}
+            title={isRunning ? "Pause Timer" : "Start Timer"}
+          >
+            <i className={`fas fa-${isRunning ? "pause" : "play"}`} />
+            {isRunning ? " Pause" : " Start"}
+          </button>
+          <button className="btn-skip" onClick={skipTask} title="Skip Current Task"><i className="fas fa-forward" /> Skip</button>
+          <button className="btn-complete" onClick={completeEarly} title="Complete Early"><i className="fas fa-check" /> Complete</button>
+          <button className="btn-red" onClick={restartTimer} title="Restart All Tasks"><i className="fas fa-undo-alt" /> Restart</button>
+        </div>
+
       </div>
 
       {/* Import / Export */}
       <div className="import-export">
-        <div className="export-section">
+        <div className="import-export-buttons">
           <button className="btn-export" onClick={exportTasksToXML} title="Export Tasks">
             <i className="fas fa-file-export" /> Export Tasks
           </button>
-        </div>
-        <div className="import-section" id="importSection">
-          <button id="importFileBttn" onClick={() => document.getElementById("importFile").click()}>
-            <i className="fas fa-file-import"></i> Import Tasks
+          <button id="importFileBttn" onClick={() => document.getElementById("importFile").click()} title="Import Tasks">
+            <i className="fas fa-file-import" /> Import Tasks
           </button>
           <input
             type="file"
@@ -1154,6 +1336,11 @@ export default function App() {
             style={{ display: "none" }}
           />
         </div>
+        {ioStatus && (
+          <p className={`io-status io-status--${ioStatus.type}${state.dark ? " dark-mode" : ""}`}>
+            {ioStatus.msg}
+          </p>
+        )}
       </div>
     </div>
   );
