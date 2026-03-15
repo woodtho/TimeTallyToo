@@ -4,6 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import TimerFooter from "./components/TimerFooter";
 import TaskList from "./components/TaskList";
 
+/* ------------------------- App metadata ------------------------- */
+const APP_VERSION = __APP_VERSION__;
+const REPO_URL = "https://github.com/woodtho/TimeTallyToo";
+
 /* ------------------------- Persistence helpers ------------------------- */
 const LS_KEY = "timetally_v2_cssmatch";
 const SYNC_CH = "timetally_bc_sync"; // BroadcastChannel name for cross-tab sync
@@ -1076,6 +1080,12 @@ export default function App() {
               <li>Disable tasks you want to skip without deleting them.</li>
             </ul>
           </div>
+          <div className="help-footer">
+            <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="help-footer-link">
+              <i className="fab fa-github" /> woodtho/TimeTallyToo
+            </a>
+            <span className="help-footer-version">v{APP_VERSION}</span>
+          </div>
         </div>
       </div>
     )}
@@ -1290,6 +1300,16 @@ export default function App() {
       <header>
         <h1>TimeTallyToo</h1>
         <div className="header-buttons">
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github-button"
+            title={`View on GitHub · v${APP_VERSION}`}
+            aria-label="View source on GitHub"
+          >
+            <i className="fab fa-github" />
+          </a>
           <button
             id="toggleOptionsButton"
             className="gear-button"

@@ -1162,6 +1162,56 @@ header {
   color: #1976d2;
 }
 
+.github-button {
+  display: flex;
+  align-items: center;
+  color: #2196f3;
+  font-size: 24px;
+  padding: 5px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.github-button:hover {
+  color: #1976d2;
+}
+
+/* Help page footer — version + repo link */
+.help-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 2px;
+  gap: 8px;
+}
+
+.help-footer-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #2196f3;
+  text-decoration: none;
+}
+
+.help-footer-link:hover {
+  text-decoration: underline;
+}
+
+.help-footer-version {
+  font-size: 11px;
+  color: #999;
+  font-variant-numeric: tabular-nums;
+}
+
+.options-overlay.dark-mode .help-footer-link {
+  color: #90caf9;
+}
+
+.options-overlay.dark-mode .help-footer-version {
+  color: #666;
+}
+
 /* Help Menu */
 .help-menu {
   display: none;
@@ -1484,7 +1534,8 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   }
   .gear-button,
   .help-button,
-  .dark-mode-button {
+  .dark-mode-button,
+  .github-button {
     font-size: 20px;
     padding: 4px 6px;
     min-height: 40px;
