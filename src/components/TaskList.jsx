@@ -82,6 +82,7 @@ const TaskList = React.memo(function TaskList({
   tasks,
   config,
   dark,
+  isRunning,
   currentTaskIndex,
   currentList,
   editValues,
@@ -101,7 +102,8 @@ const TaskList = React.memo(function TaskList({
     <ul id="taskList" ref={listRef} className={config.compactTasks ? "compact" : ""}>
       {tasks.map((t, i) => {
         const isCurrent = i === currentTaskIndex;
-        const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${dark ? " dark-mode" : ""}`;
+        const isCompleted = t.remaining === 0 && t.time > 0;
+        const itemCls = `task-item${isCurrent ? " current" : ""}${isCurrent && isRunning ? " timer-running" : ""}${isCompleted ? " completed" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${dark ? " dark-mode" : ""}`;
         // Validate ytId against the strict 11-char regex before embedding
         const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
 

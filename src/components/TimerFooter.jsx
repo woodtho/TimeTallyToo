@@ -37,6 +37,7 @@ const TimerFooter = React.memo(function TimerFooter({
   dark,
   isRunning,
   isWarning,
+  completionFlash,
   currentTask,
   progress,
   timerDisplayTime,
@@ -55,7 +56,7 @@ const TimerFooter = React.memo(function TimerFooter({
       {/* Timer */}
       <div className={`timer-section${dark ? " dark-mode" : ""}`}>
         <div className={`progress-container${dark ? " dark-mode" : ""}`}>
-          <div className={`progress-bar${dark ? " dark-mode" : ""}`} style={{ width: `${progress}%` }} />
+          <div className={`progress-bar${dark ? " dark-mode" : ""}${completionFlash ? " flash" : ""}`} style={{ width: `${progress}%` }} />
         </div>
         <div className={`timer-info${dark ? " dark-mode" : ""}`}>
           {config.timerShowTaskName && (

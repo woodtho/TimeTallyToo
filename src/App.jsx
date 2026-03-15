@@ -181,6 +181,14 @@ function serializeState(state) {
 
 /* ----------------------------- Utilities ------------------------------ */
 const affirmations = ["Great job!", "Well done!", "You did it!", "Keep it up!", "Nice work!"];
+
+const EMPTY_STATES = [
+  { msg: "Your task list is refreshingly empty. That won't last.", icon: "fa-hourglass-start" },
+  { msg: "Nothing here yet. The clock is patient.", icon: "fa-clock" },
+  { msg: "A blank slate. All the possibilities.", icon: "fa-seedling" },
+  { msg: "Suspiciously task-free. Let's fix that.", icon: "fa-bolt" },
+  { msg: "No tasks. No pressure. Add one when you're ready.", icon: "fa-list-check" },
+];
 const secs = (n) => n;
 const mins = (n) => n * 60;
 const hours = (n) => n * 3600;
@@ -266,6 +274,11 @@ export default function App() {
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [affirmationToast, setAffirmationToast] = useState(null);
+  const [completionFlash, setCompletionFlash] = useState(false);
+  const [listComplete, setListComplete] = useState(false);
+  const affirmationTimerRef = useRef(null);
+  const listCompleteTimerRef = useRef(null);
   const [editValues, setEditValues] = useState({});       // { [task.id]: { name, time } }
   const [renamingTab, setRenamingTab] = useState(null);   // list name being renamed
   const [renamingTabValue, setRenamingTabValue] = useState("");
@@ -385,6 +398,8 @@ export default function App() {
     return () => {
       clearInterval(timerRef.current);
       clearTimeout(saveTimerRef.current);
+      clearTimeout(affirmationTimerRef.current);
+      clearTimeout(listCompleteTimerRef.current);
       // Fix #8: close AudioContext so the browser slot is freed immediately
       try { audioCtxRef.current?.close(); } catch { /* ignore */ }
       audioCtxRef.current = null;
@@ -453,6 +468,13 @@ export default function App() {
     : (currentTask?.remaining ?? 0);
   const enabledTaskCount = tasks.filter(t => t.enabled).length;
   const currentEnabledPos = tasks.slice(0, state.currentTaskIndex + 1).filter(t => t.enabled).length;
+
+  const emptyState = useMemo(
+    () => EMPTY_STATES[Math.floor(Math.random() * EMPTY_STATES.length)],
+    // Re-pick when the user switches lists; stable during re-renders of same list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.currentList]
+  );
 
   const etaText = useMemo(() => {
     const secsLeft = sumEnabledRemaining(tasks);
@@ -723,6 +745,11 @@ export default function App() {
     const cfg = configRef.current;
     if (cfg?.ttsMode === "customCompletion") speak(cfg.ttsCustomMessage || "Task completed");
     else if (cfg?.ttsMode === "randomAffirmation") speak(affirmations[Math.floor(Math.random() * affirmations.length)]);
+    // Always show the visual affirmation toast, independent of TTS setting
+    const msg = affirmations[Math.floor(Math.random() * affirmations.length)];
+    setAffirmationToast(msg);
+    clearTimeout(affirmationTimerRef.current);
+    affirmationTimerRef.current = setTimeout(() => setAffirmationToast(null), 2500);
   }
 
   /* Core interval — extracted so both startTimer and completeEarly can reuse it */
@@ -797,6 +824,9 @@ export default function App() {
       for (const fx of sideEffects) {
         if (fx.type === "complete") {
           announceComplete();
+          // Flash the progress bar briefly
+          setCompletionFlash(true);
+          setTimeout(() => setCompletionFlash(false), 450);
         } else if (fx.type === "start") {
           beep();
           pauseAllYouTube();
@@ -812,6 +842,17 @@ export default function App() {
         timerRef.current = null;
         pauseAllYouTube();
         setIsRunning(false);
+        // Show celebration only when the list completed naturally (at least one task
+        // completed and no "advance" side-effect, which would mean autoAdvance=false
+        // paused mid-list rather than the whole list finishing).
+        const listDoneNaturally =
+          sideEffects.some((fx) => fx.type === "complete") &&
+          !sideEffects.some((fx) => fx.type === "advance");
+        if (listDoneNaturally) {
+          setListComplete(true);
+          clearTimeout(listCompleteTimerRef.current);
+          listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
+        }
       }
     }, 200);
   }
@@ -883,11 +924,19 @@ export default function App() {
         playYouTubeIfAny(nxt);
         _startInterval();
       }
+    } else {
+      // Last task completed manually — show the same celebration as natural completion
+      announceComplete();
+      setListComplete(true);
+      clearTimeout(listCompleteTimerRef.current);
+      listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
     }
   }
 
   function restartTimer() {
     pauseTimer();
+    setListComplete(false);
+    clearTimeout(listCompleteTimerRef.current);
     patch((n) => {
       (n.lists[n.currentList] || []).forEach((t) => { t.remaining = t.time; });
       n.currentTaskIndex = 0;
@@ -1004,6 +1053,29 @@ export default function App() {
 
   return (
     <>
+    {/* List-complete celebration overlay */}
+    {listComplete && (
+      <div
+        className={`list-complete-overlay${state.dark ? " dark-mode" : ""}`}
+        onClick={() => { setListComplete(false); clearTimeout(listCompleteTimerRef.current); }}
+        role="dialog"
+        aria-label="List complete"
+      >
+        <div className="list-complete-card">
+          <i className="fas fa-star" />
+          <p className="list-complete-title">List complete!</p>
+          <p className="list-complete-sub">{state.currentList}</p>
+        </div>
+      </div>
+    )}
+
+    {/* Affirmation toast — shown on each task completion */}
+    {affirmationToast && (
+      <div className={`affirmation-toast${state.dark ? " dark-mode" : ""}`} aria-live="polite">
+        <i className="fas fa-circle-check" /> {affirmationToast}
+      </div>
+    )}
+
     {/* Help full-screen overlay */}
     {state.showHelp && (
       <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
@@ -1532,6 +1604,7 @@ export default function App() {
         tasks={tasks}
         config={config}
         dark={state.dark}
+        isRunning={isRunning}
         currentTaskIndex={state.currentTaskIndex}
         currentList={state.currentList}
         editValues={editValues}
@@ -1548,8 +1621,8 @@ export default function App() {
       />
       {tasks.length === 0 && (
         <div className="empty-state">
-          <i className="fas fa-list-check" />
-          <p>No tasks yet. Add one above to get started.</p>
+          <i className={`fas ${emptyState.icon}`} />
+          <p>{emptyState.msg}</p>
         </div>
       )}
 
@@ -1559,6 +1632,7 @@ export default function App() {
         dark={state.dark}
         isRunning={isRunning}
         isWarning={isWarning}
+        completionFlash={completionFlash}
         currentTask={currentTask}
         progress={progress}
         timerDisplayTime={timerDisplayTime}
