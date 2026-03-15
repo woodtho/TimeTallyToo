@@ -5,11 +5,33 @@ const LS_KEY = "timetally_v2_cssmatch";
 const SYNC_CH = "timetally_bc_sync"; // BroadcastChannel name for cross-tab sync
 
 const defaultConfig = () => ({
+  // Audio
   beepEnabled: true,
+  beepVolume: 0.3,
+  beepTone: "medium",          // "low" | "medium" | "high"
+  beepCount: 1,                // 1 | 2 | 3
+  // TTS
   ttsEnabled: false,
   selectedVoiceName: "",
   ttsMode: "taskNamePlusDurationStart",
-  ttsCustomMessage: "Task completed!"
+  ttsCustomMessage: "Task completed!",
+  // Timer behaviour
+  autoAdvance: true,
+  timerDirection: "countdown", // "countdown" | "countup"
+  warningThreshold: 0,         // seconds; 0 = disabled
+  // Progress / footer display
+  progressBarMode: "list",     // "list" | "task"
+  timerShowTaskName: true,
+  timerShowRemaining: true,
+  timerShowPercent: true,
+  timerShowCount: false,
+  // Task list display
+  showEta: true,
+  showTaskRowRemaining: true,
+  compactTasks: false,
+  // Input
+  defaultTimeUnit: "minutes",
+
 });
 
 const defaultState = () => ({
@@ -225,7 +247,7 @@ export default function App() {
   const timeUnitRef = useRef(null);
   const createListNameRef = useRef(null);
   const timerRef = useRef(null);
-  const audioRef = useRef(null);
+  const audioCtxRef = useRef(null);
   const lastTick = useRef(null);
   const draggedTabIndex = useRef(null);
   const bcRef = useRef(null);                               // BroadcastChannel ref
@@ -324,29 +346,6 @@ export default function App() {
     };
   }, []);
 
-  /* Beep — generated via Web Audio API, no external CDN dependency */
-  useEffect(() => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      audioRef.current = {
-        play: () => {
-          try {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = "sine";
-            osc.frequency.value = 880;
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.3);
-          } catch { /* ignore if context is suspended */ }
-        }
-      };
-      return () => { try { ctx.close(); } catch { /* ignore */ } };
-    } catch { /* Web Audio not supported */ }
-  }, []);
 
   /* Voices — use addEventListener to avoid overwriting other handlers */
   useEffect(() => {
@@ -387,13 +386,28 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { configRef.current = config; }, [config]);
 
-  const progress = useMemo(() => {
-    // Only count enabled tasks so disabled ones don't skew the bar
+  const listProgress = useMemo(() => {
     const enabled = tasks.filter((t) => t.enabled);
     const total = enabled.reduce((a, t) => a + (t.time || 0), 0);
     const done = enabled.reduce((a, t) => a + Math.max(0, t.time - t.remaining), 0);
     return total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
   }, [tasks]);
+
+  const taskProgress = useMemo(() => {
+    const t = tasks[state.currentTaskIndex];
+    if (!t || !t.time) return 0;
+    return Math.min(100, Math.round(((t.time - t.remaining) / t.time) * 100));
+  }, [tasks, state.currentTaskIndex]);
+
+  const progress = config.progressBarMode === "task" ? taskProgress : listProgress;
+
+  const currentTask = tasks[state.currentTaskIndex];
+  const isWarning = config.warningThreshold > 0 && (currentTask?.remaining ?? 0) <= config.warningThreshold && (currentTask?.remaining ?? 0) > 0;
+  const timerDisplayTime = config.timerDirection === "countup"
+    ? (currentTask ? currentTask.time - currentTask.remaining : 0)
+    : (currentTask?.remaining ?? 0);
+  const enabledTaskCount = tasks.filter(t => t.enabled).length;
+  const currentEnabledPos = tasks.slice(0, state.currentTaskIndex + 1).filter(t => t.enabled).length;
 
   const etaText = useMemo(() => {
     const secsLeft = sumEnabledRemaining(tasks);
@@ -581,8 +595,35 @@ export default function App() {
   }
 
   function beep() {
-    if (!configRef.current?.beepEnabled) return;
-    audioRef.current?.play?.();
+    const cfg = configRef.current;
+    if (!cfg?.beepEnabled) return;
+    const ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === "closed") return;
+    const toneHz = { low: 330, medium: 660, high: 990 }[cfg.beepTone || "medium"] ?? 660;
+    const volume = cfg.beepVolume ?? 0.3;
+    const count = Math.max(1, Math.min(3, cfg.beepCount || 1));
+    const doPlay = () => {
+      try {
+        for (let i = 0; i < count; i++) {
+          const t0 = ctx.currentTime + i * 0.35;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "sine";
+          osc.frequency.value = toneHz;
+          gain.gain.setValueAtTime(volume, t0);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+          osc.start(t0);
+          osc.stop(t0 + 0.3);
+        }
+      } catch { /* ignore */ }
+    };
+    if (ctx.state === "suspended") {
+      ctx.resume().then(doPlay).catch(() => {});
+    } else {
+      doPlay();
+    }
   }
 
   /* Kept for call-sites outside the interval that pass state directly */
@@ -631,41 +672,60 @@ export default function App() {
 
     timerRef.current = setInterval(() => {
       const now = performance.now();
-      // Cap dt to 30 s so a throttled background tab can't skip a whole task in one tick
       const dt = Math.min((now - (lastTick.current || now)) / 1000, 30);
       lastTick.current = now;
 
-      // Collect side-effects to fire OUTSIDE the setState updater (pure function requirement)
+      // Compute side-effects from stateRef BEFORE patch() — React 18 batches setState
+      // updaters asynchronously, so anything pushed inside patch() isn't available yet.
       const sideEffects = [];
       let timerEnded = false;
+      {
+        const s = stateRef.current;
+        const arr = s.lists[s.currentList];
+        if (!arr) {
+          timerEnded = true;
+        } else {
+          let idx = s.currentTaskIndex;
+          let timeLeft = dt;
+          while (timeLeft > 0) {
+            const t = arr[idx];
+            if (!t) { timerEnded = true; break; }
+            if (t.remaining <= timeLeft) {
+              timeLeft -= t.remaining;
+              sideEffects.push({ type: "complete" });
+              const nxt = nextEnabledIndexFrom(arr, idx + 1);
+              if (nxt === -1) { timerEnded = true; break; }
+              if (!configRef.current?.autoAdvance) {
+                sideEffects.push({ type: "advance", idx: nxt });
+                timerEnded = true;
+                break;
+              }
+              idx = nxt;
+              sideEffects.push({ type: "start", task: arr[nxt], idx: nxt });
+            } else {
+              timeLeft = 0;
+            }
+          }
+        }
+      }
 
+      // Apply state mutations
       patch((n) => {
         const arr = n.lists[n.currentList];
-        if (!arr) { timerEnded = true; return; }
+        if (!arr) return;
         let idx = n.currentTaskIndex;
         let timeLeft = dt;
-
-        // Consume dt across multiple tasks to handle background-tab drift
         while (timeLeft > 0) {
           const t = arr[idx];
-          if (!t) { timerEnded = true; break; }
-
+          if (!t) break;
           if (t.remaining <= timeLeft) {
             timeLeft -= t.remaining;
             t.remaining = 0;
-            sideEffects.push({ type: "complete" });
-
             const nxt = nextEnabledIndexFrom(arr, idx + 1);
-            if (nxt === -1) {
-              arr.forEach((x) => (x.remaining = x.time));
-              n.currentTaskIndex = 0;
-              timerEnded = true;
-              break;
-            } else {
-              idx = nxt;
-              n.currentTaskIndex = nxt;
-              sideEffects.push({ type: "start", task: { ...arr[nxt] }, idx: nxt });
-            }
+            if (nxt === -1) break;
+            if (!configRef.current?.autoAdvance) { n.currentTaskIndex = nxt; break; }
+            idx = nxt;
+            n.currentTaskIndex = nxt;
           } else {
             t.remaining -= timeLeft;
             timeLeft = 0;
@@ -673,15 +733,17 @@ export default function App() {
         }
       });
 
-      // Fire side-effects now that we're outside the updater
+      // Fire side-effects synchronously — sideEffects was populated before patch()
       for (const fx of sideEffects) {
         if (fx.type === "complete") {
           announceComplete();
-          beep();
         } else if (fx.type === "start") {
+          beep();
           pauseAllYouTube();
           playYouTubeIfAny(fx.idx);
           announceStart(fx.task);
+        } else if (fx.type === "advance") {
+          pauseAllYouTube();
         }
       }
 
@@ -696,11 +758,20 @@ export default function App() {
 
   function startTimer() {
     if (timerRef.current) return;
+    // Create AudioContext during the user gesture so it starts in "running" state immediately
+    try {
+      if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      } else if (audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume().catch(() => {});
+      }
+    } catch { /* Web Audio not supported */ }
     const s = stateRef.current;
     const arr = s.lists[s.currentList] || [];
     const startIndex = nextEnabledIndexFrom(arr, s.currentTaskIndex);
     if (startIndex === -1) return;
     patch((n) => { n.currentTaskIndex = startIndex; });
+    beep();
     announceStart(arr[startIndex]);
     pauseAllYouTube();
     playYouTubeIfAny(startIndex);
@@ -722,6 +793,7 @@ export default function App() {
     if (nxt === -1) { showIoStatus("error", "No next task."); return; }
     const wasRunning = !!timerRef.current;
     pauseAllYouTube();
+    beep();
     if (wasRunning) {
       lastTick.current = performance.now();
       patch((n) => { n.currentTaskIndex = nxt; });
@@ -741,18 +813,16 @@ export default function App() {
     patch((n) => {
       const t = n.lists[n.currentList][n.currentTaskIndex];
       if (t) t.remaining = 0;
-      if (nxt !== -1) {
-        n.currentTaskIndex = nxt;
-      } else {
-        n.lists[n.currentList].forEach((x) => (x.remaining = x.time));
-        n.currentTaskIndex = 0;
-      }
+      if (nxt !== -1) n.currentTaskIndex = nxt;
     });
-    if (wasRunning && nxt !== -1) {
-      announceStart(arr[nxt]);
-      pauseAllYouTube();
-      playYouTubeIfAny(nxt);
-      _startInterval();
+    if (nxt !== -1) {
+      beep();
+      if (wasRunning) {
+        announceStart(arr[nxt]);
+        pauseAllYouTube();
+        playYouTubeIfAny(nxt);
+        _startInterval();
+      }
     }
   }
 
@@ -870,6 +940,292 @@ export default function App() {
   const containerClasses = `container${state.dark ? " dark-mode" : ""}`;
 
   return (
+    <>
+    {/* Help full-screen overlay */}
+    {state.showHelp && (
+      <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
+        <div className="options-overlay-header">
+          <span className="options-overlay-title">Help</span>
+          <button
+            className="options-close-button"
+            onClick={() => patch((n) => { n.showHelp = false; })}
+            aria-label="Close"
+          >
+            <i className="fas fa-xmark" />
+          </button>
+        </div>
+        <div className="options-overlay-body help-overlay-body">
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-list-check" /> Tasks &amp; Timing</h3>
+            <ul className="help-list">
+              <li><b>Add tasks:</b> Enter a task name and duration, choose units, then press <span className="kbd">+</span>.</li>
+              <li><b>Select current:</b> Click any task row to set it as current.</li>
+              <li><b>Enable/disable:</b> Use the toggle on each task to include or exclude it from the run.</li>
+              <li><b>Start/Pause:</b> Use <span className="btn-chip">Start</span> and <span className="btn-chip">Pause</span>.</li>
+              <li><b>Skip:</b> Jumps to the next enabled task without changing remaining time.</li>
+              <li><b>Complete early:</b> Marks the current task done immediately and advances.</li>
+              <li><b>Restart:</b> Resets all tasks' remaining time to their original durations.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fab fa-youtube" /> YouTube Playlists</h3>
+            <ul className="help-list">
+              <li><b>Create a video task:</b> Paste a YouTube URL directly in the Task Name field.</li>
+              <li><b>Auto-play:</b> Playback begins automatically when a video task becomes current.</li>
+              <li><b>Import support:</b> Imported lists auto-detect YouTube URLs and embed videos.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-pen-to-square" /> Editing &amp; Menus</h3>
+            <ul className="help-list">
+              <li><b>Quick actions:</b> Use the <span className="dots">…</span> button on a task for Edit/Delete.</li>
+              <li><b>Edit:</b> Change the task name and total time. Remaining updates when total changes.</li>
+              <li><b>List menus:</b> Use the <span className="dots">…</span> on a tab for Rename/Delete.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-arrows-up-down-left-right" /> Reordering</h3>
+            <ul className="help-list">
+              <li><b>Tasks:</b> Press and drag anywhere on a task row to reorder.</li>
+              <li><b>Lists:</b> Drag tabs to rearrange list order.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-file-import" /> Import / Export</h3>
+            <ul className="help-list">
+              <li><b>Export:</b> Downloads an XML snapshot including YouTube metadata.</li>
+              <li><b>Import:</b> XML files automatically detect YouTube URLs and embed videos.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-cloud" /> Persistence &amp; Sync</h3>
+            <ul className="help-list">
+              <li><b>Auto-save:</b> All lists, progress, and settings persist in the browser.</li>
+              <li><b>Cross-tab sync:</b> Changes propagate immediately across open tabs.</li>
+              <li><b>Dark mode:</b> Toggle from the header. Theme preference persists.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-circle-question" /> Tips</h3>
+            <ul className="help-list">
+              <li>Use multiple lists to separate focus blocks, study sets, or workout circuits.</li>
+              <li>Disable tasks you want to skip without losing their setup.</li>
+              <li>Keep YouTube tasks near relevant steps; auto-play aligns video and timing.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Options full-screen overlay */}
+    {state.showOptions && (
+      <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
+        <div className="options-overlay-header">
+          <span className="options-overlay-title">Settings</span>
+          <button
+            className="options-close-button"
+            onClick={() => patch((n) => { n.showOptions = false; })}
+            aria-label="Close"
+          >
+            <i className="fas fa-xmark" />
+          </button>
+        </div>
+        <div className="options-overlay-body">
+          <div className="options-section">
+            <p className="options-section-label">Audio</p>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="beepCheckbox">Enable Beep</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="beepCheckbox" className="enable-checkbox" checked={!!config.beepEnabled}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepEnabled = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="beepCheckbox"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="ttsCheckbox">Enable Text-to-Speech</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="ttsCheckbox" className="enable-checkbox" checked={!!config.ttsEnabled}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsEnabled = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="ttsCheckbox"></label>
+              </div>
+            </div>
+          </div>
+          <div className="options-section">
+            <p className="options-section-label">Display</p>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="progressBarMode">Progress Bar</label>
+              <select id="progressBarMode" value={config.progressBarMode || "list"}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].progressBarMode = e.target.value; })}>
+                <option value="list">Overall list progress</option>
+                <option value="task">Current task progress</option>
+              </select>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="timerShowTaskName">Show task name</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="timerShowTaskName" className="enable-checkbox"
+                  checked={config.timerShowTaskName !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].timerShowTaskName = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="timerShowTaskName"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="timerShowRemaining">Show time remaining</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="timerShowRemaining" className="enable-checkbox"
+                  checked={config.timerShowRemaining !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].timerShowRemaining = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="timerShowRemaining"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="timerShowPercent">Show percentage</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="timerShowPercent" className="enable-checkbox"
+                  checked={config.timerShowPercent !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].timerShowPercent = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="timerShowPercent"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="timerShowCount">Show task count (e.g. 2 / 5)</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="timerShowCount" className="enable-checkbox"
+                  checked={!!config.timerShowCount}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].timerShowCount = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="timerShowCount"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="showEta">Show ETA bar</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="showEta" className="enable-checkbox"
+                  checked={config.showEta !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].showEta = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="showEta"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="showTaskRowRemaining">Show time on each task row</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="showTaskRowRemaining" className="enable-checkbox"
+                  checked={config.showTaskRowRemaining !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].showTaskRowRemaining = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="showTaskRowRemaining"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="compactTasks">Compact task list</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="compactTasks" className="enable-checkbox"
+                  checked={!!config.compactTasks}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].compactTasks = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="compactTasks"></label>
+              </div>
+            </div>
+          </div>
+
+          <div className="options-section">
+            <p className="options-section-label">Timer</p>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="autoAdvance">Auto-start next task</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="autoAdvance" className="enable-checkbox"
+                  checked={config.autoAdvance !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].autoAdvance = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="autoAdvance"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="timerDirection">Timer counts</label>
+              <select id="timerDirection" value={config.timerDirection || "countdown"}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].timerDirection = e.target.value; })}>
+                <option value="countdown">Down (time remaining)</option>
+                <option value="countup">Up (time elapsed)</option>
+              </select>
+            </div>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="warningThreshold">Warning when ≤ (seconds, 0 = off)</label>
+              <input type="number" id="warningThreshold" min="0" max="3600"
+                value={config.warningThreshold ?? 0}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].warningThreshold = Math.max(0, Number(e.target.value)); })} />
+            </div>
+          </div>
+
+          <div className="options-section">
+            <p className="options-section-label">Audio</p>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="beepVolume">Beep volume ({Math.round((config.beepVolume ?? 0.3) * 100)}%)</label>
+              <input type="range" id="beepVolume" min="0" max="1" step="0.05"
+                value={config.beepVolume ?? 0.3}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepVolume = Number(e.target.value); })} />
+            </div>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="beepTone">Beep tone</label>
+              <select id="beepTone" value={config.beepTone || "medium"}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepTone = e.target.value; })}>
+                <option value="low">Low (330 Hz)</option>
+                <option value="medium">Medium (660 Hz)</option>
+                <option value="high">High (990 Hz)</option>
+              </select>
+            </div>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="beepCount">Beep count</label>
+              <select id="beepCount" value={config.beepCount ?? 1}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepCount = Number(e.target.value); })}>
+                <option value={1}>Single</option>
+                <option value={2}>Double</option>
+                <option value={3}>Triple</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="options-section">
+            <p className="options-section-label">General</p>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="defaultTimeUnit">Default time unit</label>
+              <select id="defaultTimeUnit" value={config.defaultTimeUnit || "minutes"}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].defaultTimeUnit = e.target.value; })}>
+                <option value="seconds">Seconds</option>
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div className="options-section">
+            <p className="options-section-label">Voice</p>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="voiceSelect">Voice</label>
+              <select id="voiceSelect" value={config.selectedVoiceName || (voices[0]?.name || "")}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].selectedVoiceName = e.target.value; })}>
+                {voices.map((v) => <option key={v.name} value={v.name}>{v.name}{v.default ? " (default)" : ""}</option>)}
+              </select>
+            </div>
+            <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="ttsModeSelect">Announce</label>
+              <select id="ttsModeSelect" value={config.ttsMode}
+                onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsMode = e.target.value; })}>
+                <option value="taskNamePlusDurationStart">Start: Task name + duration</option>
+                <option value="taskNameStart">Start: Task name only</option>
+                <option value="durationStart">Start: Duration only</option>
+                <option value="customCompletion">Completion: Custom message</option>
+                <option value="randomAffirmation">Completion: Random affirmation</option>
+              </select>
+            </div>
+            {config.ttsMode === "customCompletion" && (
+              <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
+                <label htmlFor="ttsCustomMessage">Message</label>
+                <input type="text" id="ttsCustomMessage" placeholder="e.g. Task completed!"
+                  value={config.ttsCustomMessage}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsCustomMessage = e.target.value; })} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     <div className={containerClasses}>
       <header>
         <h1>TimeTallyToo</h1>
@@ -901,89 +1257,6 @@ export default function App() {
         </div>
       </header>
 
-      <div
-        id="helpMenu"
-        className={`help-menu${state.dark ? " dark-mode" : ""}`}
-        style={{ display: state.showHelp ? "block" : "none" }}
-      >
-        <div className="help-grid">
-          <section className="help-card">
-            <h3><i className="fas fa-list-check" /> Tasks & Timing</h3>
-            <ul className="help-list">
-              <li><b>Add tasks:</b> Enter a task name and duration, choose units, then press <span className="kbd">+</span>.</li>
-              <li><b>Select current:</b> Click any task row to set it as current. Current shows a “[Current]” tag.</li>
-              <li><b>Enable/disable:</b> Use the toggle on each task to include or exclude it from the run.</li>
-              <li><b>Start/Pause:</b> Use <span className="btn-chip">Start</span> and <span className="btn-chip">Pause</span>. Completion beeps if enabled.</li>
-              <li><b>Skip:</b> Jumps to the next enabled task without changing the current task’s remaining time.</li>
-              <li><b>Complete early:</b> Marks the current task done immediately and advances.</li>
-              <li><b>Restart:</b> Resets all tasks’ remaining time to their original durations.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fab fa-youtube" /> YouTube Playlists</h3>
-            <ul className="help-list">
-              <li><b>Create a video task:</b> Paste a YouTube URL directly in the <em>Task Name</em> field. The app embeds the video automatically.</li>
-              <li><b>Auto-play:</b> When a video task becomes current and the timer starts, playback begins automatically.</li>
-              <li><b>TTS friendly:</b> Text-to-speech never reads the raw URL. It uses “YouTube video” when announcing.</li>
-              <li><b>Import support:</b> Imported lists that contain YouTube URLs auto-detect and embed without manual editing.</li>
-              <li><b>Playback control:</b> Non-current embeds are view-only. Select the task to interact or let the timer advance to it.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-pen-to-square" /> Editing & Menus</h3>
-            <ul className="help-list">
-              <li><b>Quick actions:</b> Use the <span className="dots">…</span> button on a task for Edit/Delete.</li>
-              <li><b>Edit:</b> Change the task name (or YouTube URL) and total time. Remaining updates when total changes.</li>
-              <li><b>List menus:</b> Use the <span className="dots">…</span> on a tab for Rename/Delete.</li>
-              <li><b>Clean menus:</b> Ellipsis icons are white by default; on tasks in light mode they appear black for contrast.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-arrows-up-down-left-right" /> Reordering</h3>
-            <ul className="help-list">
-              <li><b>Tasks:</b> Press and drag anywhere on a task row to reorder. Interactive controls don’t initiate dragging.</li>
-              <li><b>Lists:</b> Drag tabs to rearrange list order. The active list is highlighted.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-sliders" /> Options & TTS</h3>
-            <ul className="help-list">
-              <li><b>Per-list settings:</b> Toggle beep, enable TTS, choose a voice, and set announcement style.</li>
-              <li><b>Announcements:</b> Choose to announce task name, duration, both, or a custom completion message.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-file-import" /> Import / Export</h3>
-            <ul className="help-list">
-              <li><b>Export:</b> Downloads an XML snapshot including YouTube metadata.</li>
-              <li><b>Import:</b> XML files automatically detect YouTube URLs and embed videos on load.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-cloud" /> Persistence & Sync</h3>
-            <ul className="help-list">
-              <li><b>Auto-save:</b> All lists, progress, and settings persist to the browser.</li>
-              <li><b>Cross-tab sync:</b> Changes propagate immediately across open tabs/windows of the same browser profile.</li>
-              <li><b>Dark mode:</b> Toggle from the header. Theme preference persists.</li>
-            </ul>
-          </section>
-
-          <section className="help-card">
-            <h3><i className="fas fa-circle-question" /> Tips</h3>
-            <ul className="help-list">
-              <li>Use multiple lists to separate focus blocks, study sets, or workout circuits.</li>
-              <li>Disable tasks you want to skip without losing their setup.</li>
-              <li>Keep YouTube tasks near relevant steps; auto-play aligns video and timing.</li>
-            </ul>
-          </section>
-        </div>
-      </div>
 
       {/* Tabs + inline list creation */}
       <div id="tabsContainer" className="tabs-container">
@@ -1128,86 +1401,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Options */}
-      <div
-        id="optionsMenu"
-        className={`options-menu${state.dark ? " dark-mode" : ""}`}
-        style={{ display: state.showOptions ? "block" : "none" }}
-      >
-        <h3>List Options</h3>
-
-        <div className={`option-row${state.dark ? " dark-mode" : ""}`}>
-          <label>Enable Beep?</label>
-          <div className="enable-checkbox-wrapper">
-            <input
-              type="checkbox"
-              id="beepCheckbox"
-              className="enable-checkbox"
-              checked={!!config.beepEnabled}
-              onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepEnabled = e.target.checked; })}
-            />
-            <label className="enable-checkbox-label" htmlFor="beepCheckbox"></label>
-          </div>
-        </div>
-
-        <div className={`option-row${state.dark ? " dark-mode" : ""}`}>
-          <label>Enable TTS?</label>
-          <div className="enable-checkbox-wrapper">
-            <input
-              type="checkbox"
-              id="ttsCheckbox"
-              className="enable-checkbox"
-              checked={!!config.ttsEnabled}
-              onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsEnabled = e.target.checked; })}
-            />
-            <label className="enable-checkbox-label" htmlFor="ttsCheckbox"></label>
-          </div>
-        </div>
-
-        <div className="option-row">
-          <label htmlFor="voiceSelect">Voice:</label>
-          <select
-            id="voiceSelect"
-            value={config.selectedVoiceName || (voices[0]?.name || "")}
-            onChange={(e) => patch((n) => { n.listConfigs[n.currentList].selectedVoiceName = e.target.value; })}
-          >
-            {voices.map((v) => <option key={v.name} value={v.name}>{v.name}{v.default ? " (default)" : ""}</option>)}
-          </select>
-        </div>
-
-        <div className="option-row">
-          <label htmlFor="ttsModeSelect">TTS Says:</label>
-          <select
-            id="ttsModeSelect"
-            value={config.ttsMode}
-            onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsMode = e.target.value; })}
-          >
-            <option value="taskNamePlusDurationStart">Start: Task name + duration</option>
-            <option value="taskNameStart">Start: Task name only</option>
-            <option value="durationStart">Start: Duration only</option>
-            <option value="customCompletion">Completion: Custom message</option>
-            <option value="randomAffirmation">Completion: Random affirmation</option>
-          </select>
-        </div>
-
-        <div
-          className="option-row"
-          id="customMessageRow"
-          style={{ display: config.ttsMode === "customCompletion" ? "flex" : "none" }}
-        >
-          <label htmlFor="ttsCustomMessage">Custom Message:</label>
-          <input
-            type="text"
-            id="ttsCustomMessage"
-            placeholder="e.g. Task completed!"
-            value={config.ttsCustomMessage}
-            onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsCustomMessage = e.target.value; })}
-          />
-        </div>
-      </div>
-
       {/* ETA — only render when there is something to show */}
-      {etaText && (
+      {config.showEta !== false && etaText && (
         <div className={`section-box${state.dark ? " dark-mode" : ""}`}>
           <div className={`estimated-finish${state.dark ? " dark-mode" : ""}`} id="estimatedFinishTime">
             {etaText}
@@ -1234,7 +1429,7 @@ export default function App() {
             placeholder="Time"
             onKeyDown={(e) => { if (e.key === "Enter") addTaskUI(); }}
           />
-          <select id="timeUnit" ref={timeUnitRef} aria-label="Time Unit" defaultValue="minutes">
+          <select key={config.defaultTimeUnit} id="timeUnit" ref={timeUnitRef} aria-label="Time Unit" defaultValue={config.defaultTimeUnit || "minutes"}>
             <option value="seconds">Seconds</option>
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
@@ -1246,7 +1441,7 @@ export default function App() {
       </div>
 
       {/* Task list */}
-      <ul id="taskList" ref={listRef}>
+      <ul id="taskList" ref={listRef} className={config.compactTasks ? "compact" : ""}>
         {tasks.map((t, i) => {
           const isCurrent = i === state.currentTaskIndex;
           const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${state.dark ? " dark-mode" : ""}`;
@@ -1339,7 +1534,11 @@ export default function App() {
                     <div className="task-name">
                       {isYouTubeUrl(t.name) ? "YouTube video" : t.name}
                     </div>
-                    <div className="task-time">({formatHMS(t.remaining)} remaining)</div>
+                    {config.showTaskRowRemaining !== false && (
+                      <div className="task-time">
+                        ({formatHMS(config.timerDirection === "countup" ? t.time - t.remaining : t.remaining)} {config.timerDirection === "countup" ? "elapsed" : "remaining"})
+                      </div>
+                    )}
 
                     {/* Embedded YouTube player */}
                     {ytId && (
@@ -1421,7 +1620,7 @@ export default function App() {
       )}
 
       {/* Sticky controls footer */}
-      <div className={`controls-footer${state.dark ? " dark-mode" : ""}${isRunning ? " running" : ""}`}>
+      <div className={`controls-footer${state.dark ? " dark-mode" : ""}${isRunning ? " running" : ""}${isWarning ? " warning" : ""}`}>
 
         {/* Timer */}
         <div className={`timer-section${state.dark ? " dark-mode" : ""}`}>
@@ -1429,15 +1628,20 @@ export default function App() {
             <div className={`progress-bar${state.dark ? " dark-mode" : ""}`} style={{ width: `${progress}%` }} />
           </div>
           <div className={`timer-info${state.dark ? " dark-mode" : ""}`}>
-            <div id="timerText" className="timer-task-name">
-              {tasks[state.currentTaskIndex]
-                ? (isYouTubeUrl(tasks[state.currentTaskIndex].name) ? "YouTube video" : tasks[state.currentTaskIndex].name)
-                : "Ready"}
-            </div>
-            <div className="timer-remaining">
-              {formatHMS(tasks[state.currentTaskIndex]?.remaining ?? 0)}
-            </div>
-            <div id="timerPercent" className="timer-percent">{progress}%</div>
+            {config.timerShowTaskName && (
+              <div id="timerText" className="timer-task-name">
+                {currentTask ? (isYouTubeUrl(currentTask.name) ? "YouTube video" : currentTask.name) : "Ready"}
+              </div>
+            )}
+            {config.timerShowCount && enabledTaskCount > 0 && (
+              <div className="timer-count">{currentEnabledPos} / {enabledTaskCount}</div>
+            )}
+            {config.timerShowRemaining && (
+              <div className="timer-remaining">{formatHMS(timerDisplayTime)}</div>
+            )}
+            {config.timerShowPercent && (
+              <div id="timerPercent" className="timer-percent">{progress}%</div>
+            )}
           </div>
         </div>
 
@@ -1483,5 +1687,6 @@ export default function App() {
         )}
       </div>
     </div>
+    </>
   );
 }
