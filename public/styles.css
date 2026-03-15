@@ -1705,6 +1705,41 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   }
 
   /* --- Tabs: horizontal scroll, single row --- */
+  .tabs-scroll-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  /* Right fade — always visible when overflowing */
+  .tabs-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 44px;
+    height: calc(100% - 10px); /* stop above the border-bottom */
+    pointer-events: none;
+    background: linear-gradient(to left, #fff 30%, transparent);
+    z-index: 1;
+    transition: opacity 0.2s;
+  }
+  /* Left fade — only after user has scrolled */
+  .tabs-scroll-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 44px;
+    height: calc(100% - 10px);
+    pointer-events: none;
+    background: linear-gradient(to right, #fff 30%, transparent);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tabs-scroll-wrapper.has-scrolled::before { opacity: 1; }
+  .tabs-scroll-wrapper.no-overflow::after   { opacity: 0; }
+  /* Dark mode fades */
+  html.dark-mode .tabs-scroll-wrapper::after  { background: linear-gradient(to left,  #1e1e1e 30%, transparent); }
+  html.dark-mode .tabs-scroll-wrapper::before { background: linear-gradient(to right, #1e1e1e 30%, transparent); }
+
   .tabs-container {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -1713,7 +1748,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
     scrollbar-width: none; /* Firefox */
     gap: 4px;
     padding-bottom: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 0; /* handled by wrapper now */
   }
   .tabs-container::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
@@ -1953,6 +1988,19 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   }
   .task-item:hover .drag-handle {
     opacity: 1;
+  }
+}
+
+/* === Tab scroll nudge (one-time hint animation) === */
+@keyframes tabs-nudge {
+  0%   { transform: translateX(0); }
+  28%  { transform: translateX(-16px); }
+  62%  { transform: translateX(-7px); }
+  100% { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs-container.tabs-nudge {
+    animation: tabs-nudge 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s both;
   }
 }
 

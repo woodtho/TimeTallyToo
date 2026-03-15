@@ -449,6 +449,59 @@ export default function App() {
     }
   }, [state.isListCreating]);
 
+  /* Tab scroll affordance — fade edges + has-scrolled class */
+  useEffect(() => {
+    const container = document.getElementById("tabsContainer");
+    const wrapper = container?.parentElement;
+    if (!container || !wrapper) return;
+    const update = () => {
+      const overflow = container.scrollWidth - container.clientWidth;
+      wrapper.classList.toggle("no-overflow", overflow <= 4);
+      wrapper.classList.toggle("has-scrolled", container.scrollLeft > 4);
+    };
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update, { passive: true });
+    return () => {
+      container.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [state.listOrder]);
+
+  /* One-time nudge hint — fires once ever if tab bar overflows */
+  useEffect(() => {
+    const container = document.getElementById("tabsContainer");
+    if (!container) return;
+    if (localStorage.getItem("tabs_nudge_seen")) return;
+    const tid = setTimeout(() => {
+      if (container.scrollWidth > container.clientWidth + 4) {
+        container.classList.add("tabs-nudge");
+        localStorage.setItem("tabs_nudge_seen", "1");
+        container.addEventListener("animationend", () => container.classList.remove("tabs-nudge"), { once: true });
+      }
+    }, 700);
+    return () => clearTimeout(tid);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Peek: switching tabs scrolls so the next tab is partially visible */
+  useEffect(() => {
+    const container = document.getElementById("tabsContainer");
+    if (!container) return;
+    const active = container.querySelector(".tab.active");
+    if (!active) return;
+    const PEEK = 30; // px of the following tab to expose
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = active.getBoundingClientRect();
+    const tabRight = tabRect.right - containerRect.left + container.scrollLeft;
+    const targetRight = tabRight - container.clientWidth + PEEK;
+    if (targetRight > container.scrollLeft + 4) {
+      container.scrollTo({ left: targetRight, behavior: "smooth" });
+    } else if (tabRect.left < containerRect.left + 4) {
+      const tabLeft = tabRect.left - containerRect.left + container.scrollLeft;
+      container.scrollTo({ left: Math.max(0, tabLeft - 8), behavior: "smooth" });
+    }
+  }, [state.currentList]);
+
   /* Close menus on outside click/tap */
   useEffect(() => {
     function handleDown(e) {
@@ -1648,6 +1701,7 @@ export default function App() {
 
 
       {/* Tabs + inline list creation */}
+      <div className="tabs-scroll-wrapper">
       <div id="tabsContainer" className="tabs-container">
         {state.listOrder.map((name, idx) => {
           const active = name === state.currentList;
@@ -1793,6 +1847,7 @@ export default function App() {
           </button>
         )}
       </div>
+      </div>{/* end tabs-scroll-wrapper */}
 
       {/* ETA — only render when there is something to show */}
       {config.showEta !== false && etaText && (
