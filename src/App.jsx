@@ -1214,7 +1214,7 @@ export default function App() {
     const s = stateRef.current;
     const arr = s.lists[s.currentList] || [];
     const nxt = nextEnabledIndexFrom(arr, s.currentTaskIndex + 1);
-    if (nxt === -1) { showIoStatus("error", "No next task."); return; }
+    if (nxt === -1) { completeEarly(); return; }
     setSkipAnim({ from: s.currentTaskIndex, to: nxt });
     setTimeout(() => setSkipAnim(null), 280);
     const wasRunning = !!timerRef.current;
