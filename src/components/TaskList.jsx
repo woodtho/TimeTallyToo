@@ -213,19 +213,21 @@ const TaskList = React.memo(function TaskList({
                     </div>
                   )}
 
-                  {/* Embedded YouTube player */}
-                  {ytId && (
+                  {/* Embedded YouTube player — only rendered for the current task so the
+                      iframe ID (`yt-iframe-${currentList}__${i}`) matches exactly what
+                      playYouTubeIfAny() looks up.  Rendering all tasks' iframes would
+                      produce duplicate / wrong IDs and waste resources. */}
+                  {ytId && isCurrent && (
                     <div className="yt-embed-wrapper">
                       <iframe
-                        id={`yt-iframe-${key}`}
+                        id={`yt-iframe-${currentList}__${i}`}
                         data-yt-frame="1"
                         src={ytIframeSrc(ytId)}
                         title="YouTube video"
-                        style={{ width: "100%", aspectRatio: "16 / 9", border: 0, pointerEvents: isCurrent ? "auto" : "none", opacity: isCurrent ? 1 : 0.9 }}
+                        style={{ width: "100%", aspectRatio: "16 / 9", border: 0 }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                       />
-                      {!isCurrent && <div className="yt-embed-hint">Select task to control playback</div>}
                     </div>
                   )}
                 </>
