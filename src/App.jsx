@@ -266,8 +266,9 @@ function safeYtId(id) {
 }
 
 function ytIframeSrc(id) {
-  // enablejsapi=1 allows control via postMessage; modest branding; no related; playsinline
-  return `https://www.youtube.com/embed/${id}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1`;
+  // enablejsapi=1 allows control via postMessage; autoplay=1 starts playback as soon as
+  // the iframe loads (reliable since the iframe only mounts when the task is current).
+  return `https://www.youtube.com/embed/${id}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&playsinline=1`;
 }
 
 /* Pure helper — takes an array directly, no state closure */

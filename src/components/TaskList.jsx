@@ -46,7 +46,7 @@ function parseYouTubeId(value = "") {
 }
 
 function ytIframeSrc(id) {
-  return `https://www.youtube.com/embed/${id}?enablejsapi=1&rel=0&modestbranding=1&playsinline=1`;
+  return `https://www.youtube.com/embed/${id}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&playsinline=1`;
 }
 
 function formatHMS(total) {
@@ -233,6 +233,19 @@ const TaskList = React.memo(function TaskList({
                 </>
               )}
             </div>
+
+            {/* Thumbnail for non-current YouTube tasks */}
+            {ytId && !isCurrent && !t.editing && (
+              <div className="yt-thumb-wrapper" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`}
+                  alt="Video thumbnail"
+                  className="yt-thumb"
+                  loading="lazy"
+                />
+                <i className="fas fa-play yt-thumb-play" aria-hidden="true" />
+              </div>
+            )}
 
             <div className="task-actions">
               <div className="enable-checkbox-wrapper" title="Enable/disable this task">
