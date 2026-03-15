@@ -811,12 +811,16 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 
 .task-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   padding: 8px;
   border-bottom: 1px solid #eee;
   cursor: pointer; /* click to set current task */
   gap: 10px;
+}
+/* YouTube embed rows need top-alignment so the iframe fills naturally */
+.task-item:has(.yt-embed-wrapper) {
+  align-items: flex-start;
 }
 
 .task-item .task-details {
@@ -1778,9 +1782,28 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
     font-size: 18px;
   }
 
-  /* --- Task items: generous touch padding --- */
+  /* --- Task items: compact single-line pills on mobile --- */
   .task-item {
-    padding: 10px 8px;
+    padding: 8px;
+    align-items: center; /* vertically center drag handle, details, and actions */
+    gap: 6px;
+  }
+  .drag-handle {
+    padding: 0 6px 0 2px; /* tighter on mobile */
+  }
+  .task-item .task-details {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+  }
+  .task-item .task-details .task-name {
+    margin-bottom: 0;
+  }
+  .task-item .task-details .task-time {
+    font-size: 12px;
+    opacity: 0.65;
+    white-space: nowrap;
   }
   .task-actions {
     flex-direction: row;
