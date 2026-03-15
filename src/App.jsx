@@ -1,4 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+// Fix #9: sub-components for render isolation (React.memo prevents re-renders
+// on unrelated parent state changes, e.g. every 200ms timer tick).
+import TimerFooter from "./components/TimerFooter";
+import TaskList from "./components/TaskList";
 
 /* ------------------------- Persistence helpers ------------------------- */
 const LS_KEY = "timetally_v2_cssmatch";
@@ -82,9 +86,25 @@ function normalizeTaskFromName(rawName, timeSeconds) {
   const name = String(rawName || "").trim();
   if (isYouTubeUrl(name)) {
     const ytId = parseYouTubeId(name);
-    return { name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false, meta: { ytUrl: name, ytId } };
+    return { id: crypto.randomUUID(), name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false, meta: { ytUrl: name, ytId } };
   }
-  return { name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false };
+  return { id: crypto.randomUUID(), name, time: timeSeconds, remaining: timeSeconds, enabled: true, editing: false };
+}
+
+/* Migration to ensure all tasks have a stable id field */
+function migrateTaskIds(state) {
+  const next = structuredClone(state);
+  let changed = false;
+  for (const listName of Object.keys(next.lists || {})) {
+    const arr = next.lists[listName] || [];
+    for (let i = 0; i < arr.length; i++) {
+      if (!arr[i].id) {
+        arr[i] = { ...arr[i], id: crypto.randomUUID() };
+        changed = true;
+      }
+    }
+  }
+  return changed ? next : state;
 }
 
 /* Migration to ensure previously-saved or imported tasks infer YT meta
@@ -119,8 +139,9 @@ function loadState() {
       ...parsed,
       listConfigs: { default: defaultConfig(), ...(parsed?.listConfigs || {}) }
     };
-    // Run migration so any old data with YT URLs but no meta still embeds
-    return migrateYouTubeMeta(merged);
+    // Run migrations so any old data with YT URLs but no meta still embeds,
+    // and any tasks missing a stable id get one assigned.
+    return migrateYouTubeMeta(migrateTaskIds(merged));
   } catch {
     return defaultState();
   }
@@ -233,7 +254,7 @@ export default function App() {
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [editValues, setEditValues] = useState({});       // { [taskIndex]: { name, time } }
+  const [editValues, setEditValues] = useState({});       // { [task.id]: { name, time } }
   const [renamingTab, setRenamingTab] = useState(null);   // list name being renamed
   const [renamingTabValue, setRenamingTabValue] = useState("");
   const cancelRenameRef = useRef(false);
@@ -251,6 +272,7 @@ export default function App() {
   const lastTick = useRef(null);
   const draggedTabIndex = useRef(null);
   const bcRef = useRef(null);                               // BroadcastChannel ref
+  const importFileRef = useRef(null); // Fix #2: replaces document.getElementById("importFile")
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -326,6 +348,12 @@ export default function App() {
               ...incoming,
               listConfigs: { default: defaultConfig(), ...(incoming?.listConfigs || {}) }
             };
+            // Stop this tab's running timer before applying incoming state so both tabs
+            // don't decrement the same task simultaneously.
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
             setState(() => migrateYouTubeMeta(merged));
           } catch { /* ignore */ }
         }
@@ -338,11 +366,16 @@ export default function App() {
     };
   }, []);
 
-  /* Cleanup on unmount — prevent interval and debounce leaks */
+  /* Cleanup on unmount — prevent interval, debounce, and AudioContext leaks.
+     Fix #8: Close AudioContext on unmount. Browsers cap simultaneous contexts
+     (Chrome: 6); failing to close them causes silent failures on re-open. */
   useEffect(() => {
     return () => {
       clearInterval(timerRef.current);
       clearTimeout(saveTimerRef.current);
+      // Fix #8: close AudioContext so the browser slot is freed immediately
+      try { audioCtxRef.current?.close(); } catch { /* ignore */ }
+      audioCtxRef.current = null;
     };
   }, []);
 
@@ -419,10 +452,22 @@ export default function App() {
   }, [tasks]);
 
   /* State helpers */
+  // Fix #5: replaced structuredClone (full deep-copy ran every 200ms tick) with a
+  // targeted two-level shallow copy. migrateYouTubeMeta was also called on every
+  // patch() — it now only runs at load/import time (one-off operations).
+  // The shallow copy is sufficient because patch() callbacks only mutate task
+  // objects inside the current list array, which we shallow-copy here.
   const patch = (fn) => setState((s) => {
-    const next = structuredClone(s);
+    const next = {
+      ...s,
+      lists: { ...s.lists },
+      listConfigs: { ...s.listConfigs },
+    };
+    // Shallow-copy the current list array to avoid mutating the original
+    const cl = s.currentList;
+    if (next.lists[cl]) next.lists[cl] = [...next.lists[cl]];
     fn(next);
-    return migrateYouTubeMeta(next); // keep meta consistent whenever we patch
+    return next;
   });
 
   function ensureListConfig(name) {
@@ -910,8 +955,11 @@ export default function App() {
               // Respect explicit attributes if present (back-compat)
               const ytIdAttr = el.getAttribute("ytId");
               const ytUrlAttr = el.getAttribute("ytUrl");
-              const meta = ytIdAttr
-                ? { ytId: ytIdAttr, ytUrl: ytUrlAttr || (isYouTubeUrl(importedName) ? importedName : "") }
+              // Fix #1: sanitise the ytId attribute from XML at import time so the
+              // unsanitised value never reaches localStorage or the BroadcastChannel.
+              const sanitisedYtIdAttr = safeYtId(ytIdAttr);
+              const meta = sanitisedYtIdAttr
+                ? { ytId: sanitisedYtIdAttr, ytUrl: ytUrlAttr || (isYouTubeUrl(importedName) ? importedName : "") }
                 : norm.meta;
               return {
                 ...norm,
@@ -1234,6 +1282,7 @@ export default function App() {
             id="toggleOptionsButton"
             className="gear-button"
             title="Toggle Settings"
+            aria-label="Open settings"
             onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); patch((n) => { n.showOptions = !n.showOptions; }); }}
           >
             <i className="fas fa-cog" />
@@ -1242,6 +1291,7 @@ export default function App() {
             id="toggleHelpButton"
             className="help-button"
             title="Help"
+            aria-label="Open help"
             onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); patch((n) => { n.showHelp = !n.showHelp; }); }}
           >
             <i className="fas fa-question-circle" />
@@ -1250,6 +1300,7 @@ export default function App() {
             id="toggleDarkModeButton"
             className="dark-mode-button"
             title="Toggle Dark Mode"
+            aria-label="Toggle dark mode"
             onClick={() => patch((n) => { n.dark = !n.dark; })}
           >
             <i className={`fas fa-${state.dark ? "sun" : "moon"}`} />
@@ -1376,8 +1427,12 @@ export default function App() {
               title="Save list"
               onClick={() => {
                 const val = (createListNameRef.current?.value ?? "").trim();
-                if (val) addList(val);
-                if (createListNameRef.current) createListNameRef.current.value = "";
+                if (val) {
+                  addList(val);
+                  if (createListNameRef.current) createListNameRef.current.value = "";
+                } else {
+                  patch((n) => { n.isListCreating = false; });
+                }
               }}
             >
               <i className="fas fa-check" />
@@ -1440,178 +1495,25 @@ export default function App() {
         </div>
       </div>
 
-      {/* Task list */}
-      <ul id="taskList" ref={listRef} className={config.compactTasks ? "compact" : ""}>
-        {tasks.map((t, i) => {
-          const isCurrent = i === state.currentTaskIndex;
-          const itemCls = `task-item${isCurrent ? " current" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${state.dark ? " dark-mode" : ""}`;
-          // Validate ytId against the strict 11-char regex before embedding
-          const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
-          const key = `${state.currentList}__${i}`;
-
-          const saveEdit = (e) => {
-            e?.stopPropagation();
-            const ev = editValues[i] || {};
-            const newName = String(ev.name ?? t.name).trim();
-            const newTime = fromDisplayTime(ev.time ?? t.time, ev.unit || "seconds");
-            if (newName && newTime > 0) editTask(i, { name: newName, time: newTime });
-            editTask(i, { editing: false });
-            setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
-            setMenuOpenTask(null);
-          };
-          const cancelEdit = (e) => {
-            e?.stopPropagation();
-            editTask(i, { editing: false });
-            setEditValues((prev) => { const next = { ...prev }; delete next[i]; return next; });
-            setMenuOpenTask(null);
-          };
-
-          return (
-            <li
-              key={i}
-              className={itemCls}
-              style={{ position: "relative" }}
-              onPointerDown={(e) => onTaskPointerDown(i, e)}
-              onPointerMove={onTaskPointerMove}
-              onPointerUp={onTaskPointerUp}
-              onPointerCancel={onTaskPointerUp}
-              onClick={(e) => {
-                if (e.target.closest(".task-actions")) return;
-                if (!t.enabled) return;
-                setMenuOpenTask(null);
-                patch((n) => { n.currentTaskIndex = i; });
-              }}
-            >
-              <div
-                className="drag-handle"
-                data-drag-handle="true"
-                title="Drag to reorder"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <i className="fas fa-grip-vertical" />
-              </div>
-              <div className="task-details">
-                {t.editing ? (
-                  <div className="task-edit-inline" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="text"
-                      value={editValues[i]?.name ?? t.name}
-                      onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), name: e.target.value } }))}
-                      placeholder="Task name or YouTube URL"
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(e); } else if (e.key === "Escape") cancelEdit(e); }}
-                      autoFocus
-                    />
-                    <div className="task-edit-time-row">
-                      <input
-                        type="number"
-                        value={editValues[i]?.time ?? t.time}
-                        onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), time: e.target.value } }))}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(e); } else if (e.key === "Escape") cancelEdit(e); }}
-                        min="1"
-                      />
-                      <select
-                        className="task-edit-unit-select"
-                        value={editValues[i]?.unit ?? "seconds"}
-                        onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: { ...(prev[i] || {}), unit: e.target.value } }))}
-                        onClick={(ev) => ev.stopPropagation()}
-                      >
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                      </select>
-                    </div>
-                    <div className="task-edit-actions">
-                      <button className="task-edit-save" onClick={saveEdit}>
-                        <i className="fas fa-check" /> Save
-                      </button>
-                      <button className="task-edit-cancel" onClick={cancelEdit}>
-                        <i className="fas fa-times" /> Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="task-name">
-                      {isYouTubeUrl(t.name) ? "YouTube video" : t.name}
-                    </div>
-                    {config.showTaskRowRemaining !== false && (
-                      <div className="task-time">
-                        ({formatHMS(config.timerDirection === "countup" ? t.time - t.remaining : t.remaining)} {config.timerDirection === "countup" ? "elapsed" : "remaining"})
-                      </div>
-                    )}
-
-                    {/* Embedded YouTube player */}
-                    {ytId && (
-                      <div className="yt-embed-wrapper">
-                        <iframe
-                          id={`yt-iframe-${key}`}
-                          data-yt-frame="1"
-                          src={ytIframeSrc(ytId)}
-                          title="YouTube video"
-                          style={{ width: "100%", aspectRatio: "16 / 9", border: 0, pointerEvents: isCurrent ? "auto" : "none", opacity: isCurrent ? 1 : 0.9 }}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        />
-                        {!isCurrent && <div className="yt-embed-hint">Select task to control playback</div>}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-
-              <div className="task-actions">
-                <div className="enable-checkbox-wrapper" title="Enable/disable this task">
-                  <input
-                    type="checkbox"
-                    id={`taskEnabledCheckbox${i}`}
-                    className="enable-checkbox"
-                    checked={t.enabled}
-                    onChange={(e) => editTask(i, { enabled: e.target.checked })}
-                  />
-                  <label className="enable-checkbox-label" htmlFor={`taskEnabledCheckbox${i}`}></label>
-                </div>
-
-                <button
-                  className="icon-button ellipsis-button"
-                  title="More actions"
-                  data-menu-button="true"
-                  onClick={(e) => { e.stopPropagation(); setMenuOpenTask(menuOpenTask === i ? null : i); }}
-                >
-                  <i className="fa fa-ellipsis-h" />
-                </button>
-
-                {menuOpenTask === i && (
-                  <div
-                    data-menu-root="true"
-                    className={`menu-popover${state.dark ? " dark-mode" : ""}`}
-                    style={{ right: 0, top: "calc(100% + 6px)" }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      className="menu-item"
-                      onClick={() => {
-                        const unit = bestUnit(t.time);
-                        setEditValues((prev) => ({ ...prev, [i]: { name: t.name, time: toDisplayTime(t.time, unit), unit } }));
-                        editTask(i, { editing: true });
-                        setMenuOpenTask(null);
-                      }}
-                    >
-                      <i className="fas fa-pen" /> Edit
-                    </button>
-                    <button
-                      className="menu-item menu-danger"
-                      onClick={() => { removeTask(i); setMenuOpenTask(null); }}
-                    >
-                      <i className="fas fa-trash" /> Delete
-                    </button>
-                  </div>
-                )}
-
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {/* Task list — Fix #9: extracted to TaskList component (React.memo) */}
+      <TaskList
+        tasks={tasks}
+        config={config}
+        dark={state.dark}
+        currentTaskIndex={state.currentTaskIndex}
+        currentList={state.currentList}
+        editValues={editValues}
+        menuOpenTask={menuOpenTask}
+        listRef={listRef}
+        editTask={editTask}
+        removeTask={removeTask}
+        patch={patch}
+        setEditValues={setEditValues}
+        setMenuOpenTask={setMenuOpenTask}
+        onTaskPointerDown={onTaskPointerDown}
+        onTaskPointerMove={onTaskPointerMove}
+        onTaskPointerUp={onTaskPointerUp}
+      />
       {tasks.length === 0 && (
         <div className="empty-state">
           <i className="fas fa-list-check" />
@@ -1619,49 +1521,23 @@ export default function App() {
         </div>
       )}
 
-      {/* Sticky controls footer */}
-      <div className={`controls-footer${state.dark ? " dark-mode" : ""}${isRunning ? " running" : ""}${isWarning ? " warning" : ""}`}>
-
-        {/* Timer */}
-        <div className={`timer-section${state.dark ? " dark-mode" : ""}`}>
-          <div className={`progress-container${state.dark ? " dark-mode" : ""}`}>
-            <div className={`progress-bar${state.dark ? " dark-mode" : ""}`} style={{ width: `${progress}%` }} />
-          </div>
-          <div className={`timer-info${state.dark ? " dark-mode" : ""}`}>
-            {config.timerShowTaskName && (
-              <div id="timerText" className="timer-task-name">
-                {currentTask ? (isYouTubeUrl(currentTask.name) ? "YouTube video" : currentTask.name) : "Ready"}
-              </div>
-            )}
-            {config.timerShowCount && enabledTaskCount > 0 && (
-              <div className="timer-count">{currentEnabledPos} / {enabledTaskCount}</div>
-            )}
-            {config.timerShowRemaining && (
-              <div className="timer-remaining">{formatHMS(timerDisplayTime)}</div>
-            )}
-            {config.timerShowPercent && (
-              <div id="timerPercent" className="timer-percent">{progress}%</div>
-            )}
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="controls">
-          <button
-            className={isRunning ? "btn-pause" : "btn-start"}
-            onClick={isRunning ? pauseTimer : startTimer}
-            title={isRunning ? "Pause Timer" : "Start Timer"}
-            aria-label={isRunning ? "Pause timer" : "Start timer"}
-          >
-            <i className={`fas fa-${isRunning ? "pause" : "play"}`} />
-            {isRunning ? " Pause" : " Start"}
-          </button>
-          <button className="btn-skip" onClick={skipTask} title="Skip Current Task" aria-label="Skip current task"><i className="fas fa-forward" /> Skip</button>
-          <button className="btn-complete" onClick={completeEarly} title="Complete Early" aria-label="Complete current task early"><i className="fas fa-check" /> Complete</button>
-          <button className="btn-red" onClick={restartTimer} title="Restart All Tasks" aria-label="Restart all tasks"><i className="fas fa-undo-alt" /> Restart</button>
-        </div>
-
-      </div>
+      {/* Sticky controls footer — Fix #9: extracted to TimerFooter component (React.memo) */}
+      <TimerFooter
+        config={config}
+        dark={state.dark}
+        isRunning={isRunning}
+        isWarning={isWarning}
+        currentTask={currentTask}
+        progress={progress}
+        timerDisplayTime={timerDisplayTime}
+        enabledTaskCount={enabledTaskCount}
+        currentEnabledPos={currentEnabledPos}
+        startTimer={startTimer}
+        pauseTimer={pauseTimer}
+        skipTask={skipTask}
+        completeEarly={completeEarly}
+        restartList={restartTimer}
+      />
 
       {/* Import / Export */}
       <div className="import-export">
@@ -1669,12 +1545,13 @@ export default function App() {
           <button className="btn-export" onClick={exportTasksToXML} title="Export Tasks">
             <i className="fas fa-file-export" /> Export Tasks
           </button>
-          <button id="importFileBttn" onClick={() => document.getElementById("importFile").click()} title="Import Tasks">
+          {/* Fix #2: trigger via ref instead of document.getElementById */}
+          <button id="importFileBttn" onClick={() => importFileRef.current?.click()} title="Import Tasks">
             <i className="fas fa-file-import" /> Import Tasks
           </button>
           <input
+            ref={importFileRef}
             type="file"
-            id="importFile"
             accept=".xml"
             onChange={onFileLoaded}
             style={{ display: "none" }}
@@ -1685,6 +1562,10 @@ export default function App() {
             {ioStatus.msg}
           </p>
         )}
+        {/* Always-present aria-live region so screen readers announce IO status changes */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {ioStatus?.msg ?? ""}
+        </div>
       </div>
     </div>
     </>
