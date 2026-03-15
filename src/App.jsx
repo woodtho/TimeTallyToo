@@ -903,6 +903,14 @@ export default function App() {
     } catch { /* ignore */ }
   }
 
+  function pauseCurrentYouTube() {
+    // Target the current task's iframe directly by ID — more reliable than
+    // querySelectorAll when only one iframe is ever in the DOM at a time.
+    const s = stateRef.current;
+    const iframe = document.getElementById(`yt-iframe-${s.currentList}__${s.currentTaskIndex}`);
+    if (iframe) postToYouTubeIframe(iframe, "pauseVideo");
+  }
+
   function playYouTubeIfAny(idx) {
     const key = `${stateRef.current.currentList}__${idx}`;
     const iframe = document.getElementById(`yt-iframe-${key}`);
@@ -1085,7 +1093,8 @@ export default function App() {
     clearInterval(timerRef.current);
     timerRef.current = null;
     setIsRunning(false);
-    pauseAllYouTube();
+    pauseCurrentYouTube();
+    pauseAllYouTube(); // belt-and-suspenders
     // Commit accrued time on pause
     if (sessionAccrualRef.current > 0) {
       const accrued = sessionAccrualRef.current;
