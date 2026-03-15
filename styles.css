@@ -845,6 +845,7 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 .task-actions {
   display: flex;
   gap: 5px;
+  position: relative; /* contains the menu-popover so it anchors to the actions area */
   cursor: default; /* prevents changing the current task when clicking these controls */
   align-items: center;
   flex-shrink: 0;
@@ -1629,6 +1630,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   text-align: left;
   padding: 8px 12px;
   cursor: pointer;
+  cursor: pointer;
   font-size: 14px;
   color: #333;
   display: flex;
@@ -1642,12 +1644,24 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
 .menu-danger { color: #e53935; }
 .dark-mode .menu-danger { color: #ff6b63; }
 
+.menu-danger--confirm {
+  background: rgba(229, 57, 53, 0.1);
+  font-weight: 600;
+}
+.dark-mode .menu-danger--confirm {
+  background: rgba(239, 83, 80, 0.15);
+}
+
 /* Ensure clickable area for ellipsis is visually aligned in both modes */
 .ellipsis-button { padding: 4px 6px; }
 
 /* Anchor popovers reliably */
 .task-item { position: relative; }
 .tab { position: relative; }
+
+/* Raise the task row whose menu is open above sibling rows and the sticky footer
+   (z-index: 100) so the popover is never clipped or covered. */
+.task-item--menu-open { z-index: 150; }
 
 /* Dragging hint */
 .task-item.dragging,
