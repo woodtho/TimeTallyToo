@@ -101,6 +101,28 @@ const TaskList = React.memo(function TaskList({
   onTaskPointerMove,
   onTaskPointerUp,
 }) {
+  const [removingId, setRemovingId] = React.useState(null);
+  const [closingEditId, setClosingEditId] = React.useState(null);
+
+  const removeTaskAnimated = React.useCallback((taskId, idx) => {
+    setRemovingId(taskId);
+    setTimeout(() => {
+      removeTask(idx);
+      setRemovingId(null);
+    }, 280);
+  }, [removeTask]);
+
+  const closeEditAnimated = React.useCallback((taskId, idx, save, saveFields) => {
+    setClosingEditId(taskId);
+    if (save && saveFields) editTask(idx, saveFields);
+    setTimeout(() => {
+      editTask(idx, { editing: false });
+      setEditValues((prev) => { const next = { ...prev }; delete next[taskId]; return next; });
+      setMenuOpenTask(null);
+      setClosingEditId(null);
+    }, 180);
+  }, [editTask, setEditValues, setMenuOpenTask]);
+
   return (
     <ul id="taskList" ref={listRef} className={config.compactTasks ? "compact" : ""}>
       {tasks.map((t, i) => {
@@ -118,30 +140,33 @@ const TaskList = React.memo(function TaskList({
           skipAnim?.from === i ? "task-item--skip-out" : "",
           skipAnim?.to === i ? "task-item--skip-in" : "",
           droppedIndex === i ? "task-item--dropped" : "",
+          t.id === removingId ? "task-item--removing" : "",
+          t.id === closingEditId ? "task-item--edit-closing" : "",
         ].filter(Boolean).join(" ");
         // Validate ytId against the strict 11-char regex before embedding
         const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
 
         const saveEdit = (e) => {
           e?.stopPropagation();
+          // Pulse the save button if triggered by its own click
+          if (e?.currentTarget?.classList?.contains("task-edit-save")) {
+            e.currentTarget.classList.add("save--flashing");
+          }
           const ev = editValues[t.id] || {};
           const newName = String(ev.name ?? t.name).trim();
           const newTime = fromDisplayTime(ev.time ?? t.time, ev.unit || "seconds");
-          if (newName && newTime > 0) editTask(i, { name: newName, time: newTime });
-          editTask(i, { editing: false });
-          setEditValues((prev) => { const next = { ...prev }; delete next[t.id]; return next; });
-          setMenuOpenTask(null);
+          const saveFields = (newName && newTime > 0) ? { name: newName, time: newTime } : null;
+          closeEditAnimated(t.id, i, !!saveFields, saveFields);
         };
         const cancelEdit = (e) => {
           e?.stopPropagation();
-          editTask(i, { editing: false });
-          setEditValues((prev) => { const next = { ...prev }; delete next[t.id]; return next; });
-          setMenuOpenTask(null);
+          closeEditAnimated(t.id, i, false, null);
         };
 
         return (
           <li
             key={t.id}
+            data-task-id={t.id}
             className={itemCls}
             style={{ position: "relative" }}
             onPointerDown={(e) => onTaskPointerDown(i, e)}
@@ -288,7 +313,7 @@ const TaskList = React.memo(function TaskList({
                   </button>
                   <button
                     className="menu-item menu-danger"
-                    onClick={() => { removeTask(i); setMenuOpenTask(null); }}
+                    onClick={() => { setMenuOpenTask(null); removeTaskAnimated(t.id, i); }}
                   >
                     <i className="fas fa-trash" /> Delete
                   </button>

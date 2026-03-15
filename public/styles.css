@@ -2058,6 +2058,11 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   }
 }
 
+/* === Whimsy: task left-border transition (edit/current/hover) === */
+.task-item {
+  transition: border-left-color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+
 /* === Whimsy: new task slide-in === */
 @keyframes taskSlideIn {
   from { opacity: 0; transform: translateX(-14px); }
@@ -2171,87 +2176,359 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
 }
 
 /* === Stats overlay === */
-.stats-section {
-  margin-bottom: 20px;
+.stats-overlay-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
+/* Section heading */
+.stats-block-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.stats-block-label--section {
+  margin-top: 20px;
+}
+.options-overlay.dark-mode .stats-block-label { color: #666; }
+
+.stats-list-count {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.options-overlay.dark-mode .stats-list-count {
+  background: #1a2a3a;
+  color: #90caf9;
+}
+
+/* Global block */
+.stats-global-block {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 16px;
+}
+.stats-global-block.dark-mode {
+  background: #2a2a2a;
+  border-color: #3a3a3c;
+}
+
+/* Hero row — 3 big numbers */
+.stats-hero {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat-hero-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(145deg, #e3f2fd 0%, #ede7f6 100%);
+  border-radius: 10px;
+  padding: 14px 8px 10px;
+}
+.stats-global-block.dark-mode .stat-hero-item {
+  background: linear-gradient(145deg, #1a2535 0%, #231a35 100%);
+}
+.stat-hero-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1565c0;
+  line-height: 1.1;
+}
+.stats-global-block.dark-mode .stat-hero-value { color: #90caf9; }
+.stat-hero-label {
+  font-size: 10px;
+  color: #777;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stats-global-block.dark-mode .stat-hero-label { color: #888; }
+
+/* Stat card grid */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+}
+.stats-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
+/* Stat card */
 .stat-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 16px 12px;
+  background: #f8f9fa;
+  border: 1px solid #efefef;
+  border-radius: 9px;
+  padding: 10px 6px;
   text-align: center;
 }
-.options-overlay.dark-mode .stat-card {
-  background: #2a2a2a;
+.stats-global-block.dark-mode .stat-card,
+.stats-accordion-item.dark-mode .stat-card {
+  background: #323232;
   border-color: #444;
 }
 
 .stat-card-icon {
-  font-size: 20px;
+  font-size: 14px;
   color: #2196f3;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
-
 .stat-card-value {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   color: #111;
   line-height: 1.2;
 }
-.options-overlay.dark-mode .stat-card-value {
-  color: #f0f0f0;
+.stats-global-block.dark-mode .stat-card-value,
+.stats-accordion-item.dark-mode .stat-card-value { color: #f0f0f0; }
+
+.stat-card-value--sm {
+  font-size: 12px;
+  word-break: break-word;
+  line-height: 1.3;
+}
+.stat-card-label {
+  font-size: 10px;
+  color: #888;
+  margin-top: 3px;
+}
+.stats-global-block.dark-mode .stat-card-label,
+.stats-accordion-item.dark-mode .stat-card-label { color: #999; }
+
+/* Accordion */
+.stats-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stats-accordion-item {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.stats-accordion-item.dark-mode {
+  background: #2a2a2a;
+  border-color: #3a3a3c;
+}
+.stats-accordion-item.is-current {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 1px rgba(33,150,243,0.25);
+}
+.stats-accordion-item.dark-mode.is-current {
+  border-color: #64b5f6;
+  box-shadow: 0 0 0 1px rgba(100,181,246,0.2);
 }
 
-.stat-card-label {
-  font-size: 11px;
-  color: #777;
-  margin-top: 4px;
+.stats-accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
 }
-.options-overlay.dark-mode .stat-card-label {
+.stats-accordion-header:hover {
+  background: rgba(0,0,0,0.03);
+}
+.stats-accordion-item.dark-mode .stats-accordion-header:hover {
+  background: rgba(255,255,255,0.04);
+}
+.stats-accordion-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stats-accordion-item.dark-mode .stats-accordion-name { color: #e8e8e8; }
+.stats-accordion-meta {
+  font-size: 12px;
   color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.stats-accordion-chevron {
+  font-size: 11px;
+  color: #bbb;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.stats-accordion-header.is-open .stats-accordion-chevron {
+  transform: rotate(180deg);
+}
+
+/* Accordion body animation (grid-template-rows trick) */
+.stats-accordion-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+}
+.stats-accordion-body.is-open {
+  grid-template-rows: 1fr;
+}
+.stats-accordion-body-inner {
+  overflow: hidden;
+  border-top: 1px solid transparent;
+  transition: border-color 0.22s ease;
+}
+.stats-accordion-body.is-open .stats-accordion-body-inner {
+  border-top-color: #f0f0f0;
+}
+.stats-accordion-item.dark-mode .stats-accordion-body.is-open .stats-accordion-body-inner {
+  border-top-color: #3a3a3c;
+}
+
+.stats-accordion-grid {
+  padding: 12px;
+}
+
+.stats-accordion-footer {
+  padding: 0 12px 12px;
 }
 
 .stats-reset-btn {
-  display: block;
+  display: inline-block;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
-  color: #999;
-  margin-top: 12px;
-  padding: 4px 0;
+  font-size: 11px;
+  color: #bbb;
+  padding: 0;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.stats-reset-btn:hover {
-  color: #e53935;
-}
-.options-overlay.dark-mode .stats-reset-btn {
-  color: #666;
-}
-.options-overlay.dark-mode .stats-reset-btn:hover {
-  color: #ef5350;
+.stats-reset-btn:hover { color: #e53935; }
+.stats-accordion-item.dark-mode .stats-reset-btn { color: #555; }
+.stats-accordion-item.dark-mode .stats-reset-btn:hover { color: #ef5350; }
+
+/* ===================================================
+   Whimsy Pack 3 — Add / Delete / Edit interactions
+   =================================================== */
+
+/* === Menu popover spring entrance === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes menuPopIn {
+    from { opacity: 0; transform: scale(0.85) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  .menu-popover {
+    animation: menuPopIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
 }
 
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+/* === Add button: shake on reject === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes addBtnReject {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-5px); }
+    40%       { transform: translateX(5px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(3px); }
   }
-  .stat-card {
-    padding: 12px 8px;
+  .btn--rejected {
+    animation: addBtnReject 0.35s ease both;
   }
-  .stat-card-value {
-    font-size: 18px;
+}
+
+/* === Add button: flash on success === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes addBtnConfirm {
+    0%   { transform: scale(1);    background: #2196f3; }
+    40%  { transform: scale(1.18); background: #4caf50; }
+    70%  { transform: scale(0.95); background: #43a047; }
+    100% { transform: scale(1);    background: #2196f3; }
+  }
+  .btn--added {
+    animation: addBtnConfirm 0.35s ease both;
+  }
+}
+
+/* === Task name input: glow on success === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes inputConfirm {
+    0%   { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); border-color: #ccc; }
+    30%  { box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.35); border-color: #4caf50; }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); border-color: #ccc; }
+  }
+  .input--confirmed {
+    animation: inputConfirm 0.5s ease both;
+  }
+}
+
+/* === Delete: row slide+collapse exit === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes taskSlideOut {
+    0%   { opacity: 1; transform: translateX(0);    max-height: 200px; margin-bottom: 0; }
+    40%  { opacity: 0; transform: translateX(30px); max-height: 200px; margin-bottom: 0; }
+    100% { opacity: 0; transform: translateX(30px); max-height: 0;     margin-bottom: -1px; }
+  }
+  .task-item--removing {
+    pointer-events: none;
+    overflow: hidden;
+    animation: taskSlideOut 0.28s ease-in both;
+  }
+}
+
+/* === Edit form: expand on open === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes editFormIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .task-edit-inline {
+    animation: editFormIn 0.18s ease-out both;
+  }
+}
+
+/* === Edit form: collapse on close === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes editFormOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-6px); }
+  }
+  .task-item--edit-closing .task-edit-inline {
+    animation: editFormOut 0.18s ease-in both;
+    pointer-events: none;
+  }
+}
+
+/* === Edit save button: pulse on click === */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes savePulse {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.12); }
+    70%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+  }
+  .task-edit-save.save--flashing {
+    animation: savePulse 0.25s ease both;
   }
 }

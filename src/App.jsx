@@ -50,9 +50,15 @@ const defaultConfig = () => ({
 
 const defaultListStats = () => ({
   tasksCompleted: 0,
-  timeWorked: 0,      // cumulative seconds
+  timeWorked: 0,        // cumulative seconds
   sessionsCompleted: 0,
-  lastSession: null,  // ISO 8601 string or null
+  tasksSkipped: 0,      // times skip was pressed on this list
+  lastSession: null,    // ISO 8601 datetime string
+  firstSession: null,   // ISO 8601 datetime string — set once, never overwritten
+  lastSessionDate: null,// YYYY-MM-DD for streak tracking
+  longestSession: 0,    // seconds, per session
+  currentStreak: 0,     // consecutive days with a session
+  bestStreak: 0,        // all-time best consecutive days
 });
 
 const defaultState = () => ({
@@ -67,6 +73,17 @@ const defaultState = () => ({
   showOptions: false,
   isListCreating: false
 });
+
+/* Tiny stat-card used only in the stats overlay */
+function SC({ icon, value, label, small }) {
+  return (
+    <div className="stat-card">
+      <i className={`fas ${icon} stat-card-icon`} />
+      <span className={`stat-card-value${small ? " stat-card-value--sm" : ""}`}>{value}</span>
+      <span className="stat-card-label">{label}</span>
+    </div>
+  );
+}
 
 function isYouTubeUrl(value = "") {
   try {
@@ -299,6 +316,7 @@ export default function App() {
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [expandedLists, setExpandedLists] = useState({});
   const [startPulse, setStartPulse] = useState(false);   // start-button ring animation
   const [newTaskId, setNewTaskId] = useState(null);       // slide-in for just-added task
   const [skipAnim, setSkipAnim] = useState(null);         // { from, to } for skip swipe
@@ -320,6 +338,7 @@ export default function App() {
   const taskNameRef = useRef(null);
   const taskTimeRef = useRef(null);
   const timeUnitRef = useRef(null);
+  const addBtnRef = useRef(null);
   const createListNameRef = useRef(null);
   const timerRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -340,6 +359,11 @@ export default function App() {
     document.documentElement.classList.toggle("dark-mode", !!state.dark);
     document.body.classList.toggle("dark-mode", !!state.dark);
   }, [state.dark]);
+
+  /* Expand current list when stats panel opens */
+  useEffect(() => {
+    if (showStats) setExpandedLists({ [state.currentList]: true });
+  }, [showStats]); // intentionally only reacts to open/close, not currentList changes
 
   /* Keep stateRef current so event handlers always see the latest state */
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -572,7 +596,17 @@ export default function App() {
       tasksCompleted: all.reduce((a, s) => a + (s.tasksCompleted || 0), 0),
       timeWorked: all.reduce((a, s) => a + (s.timeWorked || 0), 0),
       sessionsCompleted: all.reduce((a, s) => a + (s.sessionsCompleted || 0), 0),
+      tasksSkipped: all.reduce((a, s) => a + (s.tasksSkipped || 0), 0),
+      bestStreak: all.reduce((a, s) => Math.max(a, s.bestStreak || 0), 0),
+      longestSession: all.reduce((a, s) => Math.max(a, s.longestSession || 0), 0),
     };
+  }, [state.listStats]);
+
+  const mostActiveList = useMemo(() => {
+    const entries = Object.entries(state.listStats || {});
+    if (!entries.length) return "—";
+    const best = entries.reduce((a, b) => (b[1].timeWorked || 0) > (a[1].timeWorked || 0) ? b : a);
+    return best[1].timeWorked > 0 ? best[0] : "—";
   }, [state.listStats]);
 
   function formatTimeWorked(seconds) {
@@ -585,11 +619,38 @@ export default function App() {
     return `${r}s`;
   }
 
+  function formatStreak(days) {
+    if (!days) return "—";
+    return `${days} day${days === 1 ? "" : "s"}`;
+  }
+
+  function formatAvgSession(timeWorked, sessions) {
+    if (!sessions) return "—";
+    return formatTimeWorked(timeWorked / sessions);
+  }
+
   function formatLastSession(iso) {
     if (!iso) return "never";
     try {
       return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
     } catch { return "—"; }
+  }
+
+  function formatUsingSince(iso) {
+    if (!iso) return "—";
+    try {
+      const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+      if (days === 0) return "today";
+      if (days === 1) return "1 day";
+      if (days < 30) return `${days} days`;
+      const months = Math.floor(days / 30);
+      return months === 1 ? "1 month" : `${months} months`;
+    } catch { return "—"; }
+  }
+
+  function formatAvgTasks(tasksCompleted, sessionsCompleted) {
+    if (!sessionsCompleted) return "—";
+    return (tasksCompleted / sessionsCompleted).toFixed(1);
   }
 
   function resetCurrentListStats() {
@@ -711,7 +772,17 @@ export default function App() {
     const name = (taskNameRef.current?.value ?? "").trim();
     const amt = Number(taskTimeRef.current?.value ?? 0);
     const unit = timeUnitRef.current?.value ?? "minutes";
-    if (!name || !amt || amt <= 0) return;
+    if (!name || !amt || amt <= 0) {
+      // Shake animation on the add button
+      const btn = addBtnRef.current;
+      if (btn) {
+        btn.classList.remove("btn--rejected");
+        void btn.offsetWidth; // reflow to restart animation on rapid double-tap
+        btn.classList.add("btn--rejected");
+        btn.addEventListener("animationend", () => btn.classList.remove("btn--rejected"), { once: true });
+      }
+      return;
+    }
     const toSeconds = unit === "seconds" ? secs : unit === "minutes" ? mins : hours;
     const t = toSeconds(amt);
     const norm = normalizeTaskFromName(name, t);
@@ -720,7 +791,22 @@ export default function App() {
     });
     setNewTaskId(norm.id);
     setTimeout(() => setNewTaskId(null), 350);
-    if (taskNameRef.current) taskNameRef.current.value = "";
+    // Success feedback on button and input
+    const btn = addBtnRef.current;
+    if (btn) {
+      btn.classList.remove("btn--added");
+      void btn.offsetWidth;
+      btn.classList.add("btn--added");
+      btn.addEventListener("animationend", () => btn.classList.remove("btn--added"), { once: true });
+    }
+    const inp = taskNameRef.current;
+    if (inp) {
+      inp.classList.remove("input--confirmed");
+      void inp.offsetWidth;
+      inp.classList.add("input--confirmed");
+      inp.addEventListener("animationend", () => inp.classList.remove("input--confirmed"), { once: true });
+      inp.value = "";
+    }
     if (taskTimeRef.current) taskTimeRef.current.value = "";
     taskNameRef.current?.focus();
   }
@@ -1049,7 +1135,24 @@ export default function App() {
           n.listStats[n.currentList].timeWorked += accrued;
           if (listDoneNaturally) {
             n.listStats[n.currentList].sessionsCompleted += 1;
-            n.listStats[n.currentList].lastSession = new Date().toISOString();
+            const now = new Date().toISOString();
+            n.listStats[n.currentList].lastSession = now;
+            if (!n.listStats[n.currentList].firstSession) n.listStats[n.currentList].firstSession = now;
+            n.listStats[n.currentList].longestSession = Math.max(
+              n.listStats[n.currentList].longestSession || 0, accrued
+            );
+            const today = new Date().toISOString().slice(0, 10);
+            const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            const prev = n.listStats[n.currentList].lastSessionDate;
+            if (prev !== today) {
+              n.listStats[n.currentList].currentStreak =
+                prev === yesterday ? (n.listStats[n.currentList].currentStreak || 0) + 1 : 1;
+              n.listStats[n.currentList].bestStreak = Math.max(
+                n.listStats[n.currentList].bestStreak || 0,
+                n.listStats[n.currentList].currentStreak
+              );
+              n.listStats[n.currentList].lastSessionDate = today;
+            }
           }
         });
         if (listDoneNaturally) {
@@ -1119,10 +1222,10 @@ export default function App() {
     beep();
     if (wasRunning) {
       lastTick.current = performance.now();
-      patch((n) => { n.currentTaskIndex = nxt; });
+      patch((n) => { n.currentTaskIndex = nxt; if (!n.listStats[n.currentList]) n.listStats[n.currentList] = defaultListStats(); n.listStats[n.currentList].tasksSkipped += 1; });
       playYouTubeIfAny(nxt);
     } else {
-      patch((n) => { n.currentTaskIndex = nxt; });
+      patch((n) => { n.currentTaskIndex = nxt; if (!n.listStats[n.currentList]) n.listStats[n.currentList] = defaultListStats(); n.listStats[n.currentList].tasksSkipped += 1; });
     }
   }
 
@@ -1155,7 +1258,24 @@ export default function App() {
         n.listStats[n.currentList].tasksCompleted += 1;
         n.listStats[n.currentList].timeWorked += accrued;
         n.listStats[n.currentList].sessionsCompleted += 1;
-        n.listStats[n.currentList].lastSession = new Date().toISOString();
+        const now2 = new Date().toISOString();
+        n.listStats[n.currentList].lastSession = now2;
+        if (!n.listStats[n.currentList].firstSession) n.listStats[n.currentList].firstSession = now2;
+        n.listStats[n.currentList].longestSession = Math.max(
+          n.listStats[n.currentList].longestSession || 0, accrued
+        );
+        const today = new Date().toISOString().slice(0, 10);
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const prev = n.listStats[n.currentList].lastSessionDate;
+        if (prev !== today) {
+          n.listStats[n.currentList].currentStreak =
+            prev === yesterday ? (n.listStats[n.currentList].currentStreak || 0) + 1 : 1;
+          n.listStats[n.currentList].bestStreak = Math.max(
+            n.listStats[n.currentList].bestStreak || 0,
+            n.listStats[n.currentList].currentStreak
+          );
+          n.listStats[n.currentList].lastSessionDate = today;
+        }
       });
       announceComplete();
       beepChord();
@@ -1320,25 +1440,87 @@ export default function App() {
             <i className="fas fa-xmark" />
           </button>
         </div>
-        <div className="options-overlay-body">
-          <div className="stats-section">
-            <p className="options-section-label">{state.currentList}</p>
-            <div className="stats-grid">
-              <div className="stat-card"><i className="fas fa-check-circle stat-card-icon" /><span className="stat-card-value">{currentListStats.tasksCompleted}</span><span className="stat-card-label">Tasks completed</span></div>
-              <div className="stat-card"><i className="fas fa-clock stat-card-icon" /><span className="stat-card-value">{formatTimeWorked(currentListStats.timeWorked)}</span><span className="stat-card-label">Time worked</span></div>
-              <div className="stat-card"><i className="fas fa-flag-checkered stat-card-icon" /><span className="stat-card-value">{currentListStats.sessionsCompleted}</span><span className="stat-card-label">Sessions</span></div>
-              <div className="stat-card"><i className="fas fa-calendar stat-card-icon" /><span className="stat-card-value">{formatLastSession(currentListStats.lastSession)}</span><span className="stat-card-label">Last session</span></div>
+        <div className="options-overlay-body stats-overlay-body">
+
+          {/* ── Global hero block ─────────────────────── */}
+          <div className={`stats-global-block${state.dark ? " dark-mode" : ""}`}>
+            <p className="stats-block-label">
+              Overall
+              <span className="stats-list-count">{state.listOrder.length} list{state.listOrder.length !== 1 ? "s" : ""}</span>
+            </p>
+            <div className="stats-hero">
+              <div className="stat-hero-item">
+                <span className="stat-hero-value">{allStats.tasksCompleted}</span>
+                <span className="stat-hero-label">Tasks done</span>
+              </div>
+              <div className="stat-hero-item">
+                <span className="stat-hero-value">{formatTimeWorked(allStats.timeWorked)}</span>
+                <span className="stat-hero-label">Time worked</span>
+              </div>
+              <div className="stat-hero-item">
+                <span className="stat-hero-value">{allStats.sessionsCompleted}</span>
+                <span className="stat-hero-label">Sessions</span>
+              </div>
             </div>
-            <button className="stats-reset-btn" onClick={resetCurrentListStats}>Reset stats for this list</button>
-          </div>
-          <div className="stats-section">
-            <p className="options-section-label">All lists combined</p>
-            <div className="stats-grid">
-              <div className="stat-card"><i className="fas fa-check-circle stat-card-icon" /><span className="stat-card-value">{allStats.tasksCompleted}</span><span className="stat-card-label">Tasks completed</span></div>
-              <div className="stat-card"><i className="fas fa-clock stat-card-icon" /><span className="stat-card-value">{formatTimeWorked(allStats.timeWorked)}</span><span className="stat-card-label">Time worked</span></div>
-              <div className="stat-card"><i className="fas fa-flag-checkered stat-card-icon" /><span className="stat-card-value">{allStats.sessionsCompleted}</span><span className="stat-card-label">Sessions</span></div>
+            <div className="stats-grid stats-grid--3">
+              <SC icon="fa-hourglass-half" value={formatAvgSession(allStats.timeWorked, allStats.sessionsCompleted)} label="Avg session" />
+              <SC icon="fa-tasks"          value={formatAvgTasks(allStats.tasksCompleted, allStats.sessionsCompleted)} label="Avg tasks" />
+              <SC icon="fa-forward"        value={allStats.tasksSkipped} label="Skipped" />
+              <SC icon="fa-trophy"         value={formatTimeWorked(allStats.longestSession)} label="Longest" />
+              <SC icon="fa-star"           value={formatStreak(allStats.bestStreak)} label="Best streak" />
+              <SC icon="fa-medal"          value={mostActiveList} label="Most active" small />
             </div>
           </div>
+
+          {/* ── Per-list accordion ────────────────────── */}
+          <p className="stats-block-label stats-block-label--section">By list</p>
+          <div className="stats-accordion">
+            {state.listOrder.map((listName) => {
+              const ls = { ...defaultListStats(), ...(state.listStats?.[listName] || {}) };
+              const listTaskCount = (state.lists[listName] || []).length;
+              const isOpen = !!expandedLists[listName];
+              return (
+                <div key={listName} className={`stats-accordion-item${state.dark ? " dark-mode" : ""}${listName === state.currentList ? " is-current" : ""}`}>
+                  <button
+                    className={`stats-accordion-header${isOpen ? " is-open" : ""}`}
+                    onClick={() => setExpandedLists(prev => ({ ...prev, [listName]: !prev[listName] }))}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="stats-accordion-name">{listName}</span>
+                    <span className="stats-accordion-meta">{formatTimeWorked(ls.timeWorked)} · {ls.sessionsCompleted} session{ls.sessionsCompleted !== 1 ? "s" : ""}</span>
+                    <i className="fas fa-chevron-down stats-accordion-chevron" />
+                  </button>
+                  <div className={`stats-accordion-body${isOpen ? " is-open" : ""}`}>
+                    <div className="stats-accordion-body-inner">
+                      <div className="stats-grid stats-grid--3 stats-accordion-grid">
+                        <SC icon="fa-check-circle"   value={ls.tasksCompleted} label="Completed" />
+                        <SC icon="fa-clock"          value={formatTimeWorked(ls.timeWorked)} label="Time worked" />
+                        <SC icon="fa-flag-checkered" value={ls.sessionsCompleted} label="Sessions" />
+                        <SC icon="fa-hourglass-half" value={formatAvgSession(ls.timeWorked, ls.sessionsCompleted)} label="Avg session" />
+                        <SC icon="fa-tasks"          value={formatAvgTasks(ls.tasksCompleted, ls.sessionsCompleted)} label="Avg tasks" />
+                        <SC icon="fa-forward"        value={ls.tasksSkipped} label="Skipped" />
+                        <SC icon="fa-trophy"         value={formatTimeWorked(ls.longestSession)} label="Longest" />
+                        <SC icon="fa-fire"           value={formatStreak(ls.currentStreak)} label="Streak" />
+                        <SC icon="fa-star"           value={formatStreak(ls.bestStreak)} label="Best streak" />
+                        <SC icon="fa-seedling"       value={formatUsingSince(ls.firstSession)} label="Using for" />
+                        <SC icon="fa-list-ul"        value={listTaskCount} label="Tasks" />
+                        <SC icon="fa-calendar"       value={formatLastSession(ls.lastSession)} label="Last session" small />
+                      </div>
+                      <div className="stats-accordion-footer">
+                        <button
+                          className="stats-reset-btn"
+                          onClick={() => patch((n) => { n.listStats[listName] = defaultListStats(); })}
+                        >
+                          Reset stats for this list
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
         </div>
       </div>
     )}
@@ -1928,7 +2110,7 @@ export default function App() {
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
           </select>
-          <button onClick={addTaskUI} title="Add task" aria-label="Add task">
+          <button ref={addBtnRef} onClick={addTaskUI} title="Add task" aria-label="Add task">
             <i className="fas fa-plus" />
           </button>
         </div>
