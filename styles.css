@@ -1,6 +1,152 @@
 /* Basic styling + updated consistency for classes */
 
 /* ===================================================
+   Whimsy Pack — keyframes and feature styles
+   =================================================== */
+
+/* Affirmation toast */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+.affirmation-toast {
+  position: fixed;
+  bottom: 130px;
+  right: 16px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  border: 1px solid #a5d6a7;
+  color: #2e7d32;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  pointer-events: none;
+  animation: toastIn 0.25s ease-out both;
+}
+.affirmation-toast.dark-mode {
+  background: #1b3a1d;
+  border-color: #388e3c;
+  color: #a5d6a7;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* Progress bar flash on task completion */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes progressFlash {
+    0%   { background-color: #4caf50; }
+    40%  { background-color: #c8e6c9; }
+    100% { background-color: #4caf50; }
+  }
+  .progress-bar.flash {
+    animation: progressFlash 0.4s ease-out;
+  }
+}
+
+/* Current task row breathing glow */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rowBreath {
+    0%, 100% { box-shadow: inset 3px 0 0 rgba(33,150,243,0.25); }
+    50%       { box-shadow: inset 3px 0 0 rgba(33,150,243,0.7); }
+  }
+  .task-item.current.timer-running {
+    animation: rowBreath 2s ease-in-out infinite;
+  }
+}
+/* Without motion: just a static highlight */
+.task-item.current.timer-running {
+  box-shadow: inset 3px 0 0 rgba(33,150,243,0.5);
+}
+
+/* Task strike-through on completion */
+.task-item.completed .task-name {
+  position: relative;
+  opacity: 0.55;
+}
+/* Without motion: instant line */
+.task-item.completed .task-name::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.45;
+  width: 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes strikeThrough {
+    from { width: 0%; }
+    to   { width: 100%; }
+  }
+  .task-item.completed .task-name::after {
+    width: 0%;
+    animation: strikeThrough 0.4s ease-out forwards;
+  }
+}
+
+/* List-complete celebration overlay */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes celebrateIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+}
+
+.list-complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.list-complete-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 48px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  pointer-events: none;
+  animation: celebrateIn 0.3s ease-out both;
+}
+.list-complete-overlay.dark-mode .list-complete-card {
+  background: #2a2a2a;
+}
+.list-complete-card i.fas.fa-star {
+  font-size: 40px;
+  color: #f9a825;
+  display: block;
+  margin-bottom: 12px;
+}
+.list-complete-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+}
+.list-complete-overlay.dark-mode .list-complete-title {
+  color: #f0f0f0;
+}
+.list-complete-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #777;
+}
+.list-complete-overlay.dark-mode .list-complete-sub {
+  color: #999;
+}
+
+/* ===================================================
    Options full-screen overlay
    =================================================== */
 .options-overlay {
