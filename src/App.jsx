@@ -134,10 +134,18 @@ function loadState() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
+    // Deep-merge each per-list config with defaultConfig() so any fields added
+    // after the state was first saved pick up their correct default values.
+    const parsedConfigs = parsed?.listConfigs || {};
+    const mergedConfigs = {};
+    for (const [k, cfg] of Object.entries(parsedConfigs)) {
+      mergedConfigs[k] = { ...defaultConfig(), ...cfg };
+    }
+    if (!mergedConfigs.default) mergedConfigs.default = defaultConfig();
     const merged = {
       ...defaultState(),
       ...parsed,
-      listConfigs: { default: defaultConfig(), ...(parsed?.listConfigs || {}) }
+      listConfigs: mergedConfigs,
     };
     // Run migrations so any old data with YT URLs but no meta still embeds,
     // and any tasks missing a stable id get one assigned.
@@ -463,9 +471,12 @@ export default function App() {
       lists: { ...s.lists },
       listConfigs: { ...s.listConfigs },
     };
-    // Shallow-copy the current list array to avoid mutating the original
+    // Shallow-copy the current list array and its config to avoid mutating the
+    // previous state — required by React's immutability contract and safe under
+    // StrictMode / concurrent features.
     const cl = s.currentList;
     if (next.lists[cl]) next.lists[cl] = [...next.lists[cl]];
+    if (next.listConfigs[cl]) next.listConfigs[cl] = { ...next.listConfigs[cl] };
     fn(next);
     return next;
   });
@@ -1179,7 +1190,7 @@ export default function App() {
             </div>
             <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
               <label htmlFor="warningThreshold">Warning when ≤ (seconds, 0 = off)</label>
-              <input type="number" id="warningThreshold" min="0" max="3600"
+              <input type="number" id="warningThreshold" min="0" max="3600" step="1"
                 value={config.warningThreshold ?? 0}
                 onChange={(e) => patch((n) => { n.listConfigs[n.currentList].warningThreshold = Math.max(0, Number(e.target.value)); })} />
             </div>
