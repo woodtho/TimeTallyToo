@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 // Fix #9: sub-components for render isolation (React.memo prevents re-renders
 // on unrelated parent state changes, e.g. every 200ms timer tick).
 import TimerFooter from "./components/TimerFooter";
@@ -312,6 +313,8 @@ export default function App() {
   const [voices, setVoices] = useState([]);
   const [menuOpenTask, setMenuOpenTask] = useState(null);   // index of open task menu
   const [menuOpenTab, setMenuOpenTab] = useState(null);     // name of list with open tab menu
+  const [tabMenuPos, setTabMenuPos] = useState(null);       // { top, right } for portal-rendered tab popover
+  const [confirmDeleteList, setConfirmDeleteList] = useState(null);
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -364,6 +367,9 @@ export default function App() {
   useEffect(() => {
     if (showStats) setExpandedLists({ [state.currentList]: true });
   }, [showStats]); // intentionally only reacts to open/close, not currentList changes
+
+  /* Reset list delete confirmation when tab menu closes */
+  useEffect(() => { setConfirmDeleteList(null); }, [menuOpenTab]);
 
   /* Keep stateRef current so event handlers always see the latest state */
   useEffect(() => { stateRef.current = state; }, [state]);
@@ -1408,6 +1414,43 @@ export default function App() {
 
   return (
     <>
+    {/* Tab list action popover — rendered as a portal to escape the tabs-container
+        overflow:auto clipping context that would hide it on mobile. */}
+    {menuOpenTab !== null && tabMenuPos && createPortal(
+      <div
+        data-menu-root="true"
+        className={`menu-popover${state.dark ? " dark-mode" : ""}`}
+        style={{ position: "fixed", top: tabMenuPos.top, right: tabMenuPos.right, zIndex: 9999 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="menu-item"
+          onClick={() => {
+            setRenamingTab(menuOpenTab);
+            setRenamingTabValue(menuOpenTab);
+            setMenuOpenTab(null);
+          }}
+        >
+          <i className="fas fa-pen" /> Rename
+        </button>
+        {confirmDeleteList === menuOpenTab ? (
+          <button
+            className="menu-item menu-danger menu-danger--confirm"
+            onClick={() => { deleteList(menuOpenTab); setMenuOpenTab(null); }}
+          >
+            <i className="fas fa-exclamation-triangle" /> Confirm delete?
+          </button>
+        ) : (
+          <button
+            className="menu-item menu-danger"
+            onClick={() => setConfirmDeleteList(menuOpenTab)}
+          >
+            <i className="fas fa-trash" /> Delete
+          </button>
+        )}
+      </div>,
+      document.body
+    )}
     {/* List-complete celebration overlay */}
     {listComplete && (
       <div
@@ -1993,36 +2036,19 @@ export default function App() {
                 className="icon-button ellipsis-button tab-menu-btn"
                 title="List actions"
                 data-menu-button="true"
-                onClick={(e) => { e.stopPropagation(); setMenuOpenTab(menuOpenTab === name ? null : name); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (menuOpenTab === name) {
+                    setMenuOpenTab(null);
+                  } else {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTabMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+                    setMenuOpenTab(name);
+                  }
+                }}
               >
                 <i className="fa fa-ellipsis-h" />
               </button>
-
-              {menuOpenTab === name && (
-                <div
-                  data-menu-root="true"
-                  className={`menu-popover${state.dark ? " dark-mode" : ""}`}
-                  style={{ right: 0, top: "calc(100% + 6px)" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="menu-item"
-                    onClick={() => {
-                      setRenamingTab(name);
-                      setRenamingTabValue(name);
-                      setMenuOpenTab(null);
-                    }}
-                  >
-                    <i className="fas fa-pen" /> Rename
-                  </button>
-                  <button
-                    className="menu-item menu-danger"
-                    onClick={() => { deleteList(name); setMenuOpenTab(null); }}
-                  >
-                    <i className="fas fa-trash" /> Delete
-                  </button>
-                </div>
-              )}
             </div>
           );
         })}

@@ -103,6 +103,8 @@ const TaskList = React.memo(function TaskList({
 }) {
   const [removingId, setRemovingId] = React.useState(null);
   const [closingEditId, setClosingEditId] = React.useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState(null);
+  React.useEffect(() => { setConfirmDeleteId(null); }, [menuOpenTask]);
 
   const removeTaskAnimated = React.useCallback((taskId, idx) => {
     setRemovingId(taskId);
@@ -142,6 +144,7 @@ const TaskList = React.memo(function TaskList({
           droppedIndex === i ? "task-item--dropped" : "",
           t.id === removingId ? "task-item--removing" : "",
           t.id === closingEditId ? "task-item--edit-closing" : "",
+          menuOpenTask === i ? "task-item--menu-open" : "",
         ].filter(Boolean).join(" ");
         // Validate ytId against the strict 11-char regex before embedding
         const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
@@ -311,12 +314,21 @@ const TaskList = React.memo(function TaskList({
                   >
                     <i className="fas fa-pen" /> Edit
                   </button>
-                  <button
-                    className="menu-item menu-danger"
-                    onClick={() => { setMenuOpenTask(null); removeTaskAnimated(t.id, i); }}
-                  >
-                    <i className="fas fa-trash" /> Delete
-                  </button>
+                  {confirmDeleteId === t.id ? (
+                    <button
+                      className="menu-item menu-danger menu-danger--confirm"
+                      onClick={() => { setMenuOpenTask(null); removeTaskAnimated(t.id, i); }}
+                    >
+                      <i className="fas fa-exclamation-triangle" /> Confirm delete?
+                    </button>
+                  ) : (
+                    <button
+                      className="menu-item menu-danger"
+                      onClick={() => setConfirmDeleteId(t.id)}
+                    >
+                      <i className="fas fa-trash" /> Delete
+                    </button>
+                  )}
                 </div>
               )}
 
