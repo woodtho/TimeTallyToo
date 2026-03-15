@@ -1,5 +1,246 @@
 /* Basic styling + updated consistency for classes */
 
+/* ===================================================
+   Options full-screen overlay
+   =================================================== */
+.options-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+.options-overlay.dark-mode {
+  background: #1e1e1e;
+}
+
+.options-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.options-overlay.dark-mode .options-overlay-header {
+  background: #2a2a2a;
+  border-bottom-color: #3a3a3c;
+}
+
+.options-close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.options-close-button:hover {
+  background: rgba(0,0,0,0.06);
+  color: #111;
+}
+.options-overlay.dark-mode .options-close-button {
+  color: #aaa;
+}
+.options-overlay.dark-mode .options-close-button:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.options-overlay-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #222;
+}
+.options-overlay.dark-mode .options-overlay-title {
+  color: #f0f0f0;
+}
+
+.options-overlay-body {
+  padding: 16px;
+  max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Each section is a card inside the overlay */
+.options-overlay-body .options-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.options-overlay.dark-mode .options-overlay-body .options-section {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.options-overlay-body .options-section-label {
+  padding: 10px 16px 4px;
+  margin: 0;
+}
+.options-overlay-body .option-row--toggle {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  background: transparent;
+}
+.options-overlay-body .option-row--toggle:last-child {
+  border-bottom: none;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--toggle {
+  border-bottom-color: #3a3a3c;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--toggle label:first-child {
+  color: #e8e8e8;
+}
+.options-overlay-body .option-row--field {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.options-overlay-body .option-row--field:last-child {
+  border-bottom: none;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--field {
+  border-bottom-color: #3a3a3c;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--field label:first-child {
+  color: #aaa;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--field select,
+.options-overlay.dark-mode .options-overlay-body .option-row--field input[type="text"] {
+  background: #333;
+  color: #f0f0f0;
+  border-color: #4a4a4c;
+}
+.options-overlay.dark-mode .options-overlay-body .option-row--field select:focus,
+.options-overlay.dark-mode .options-overlay-body .option-row--field input[type="text"]:focus {
+  border-color: #90caf9;
+  box-shadow: 0 0 0 3px rgba(144, 202, 249, 0.15);
+}
+
+/* Help cards inside overlay */
+.help-overlay-body {
+  gap: 12px;
+}
+.help-card-overlay {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.options-overlay.dark-mode .help-card-overlay {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.help-card-overlay h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.options-overlay.dark-mode .help-card-overlay h3 {
+  color: #f0f0f0;
+}
+.help-card-overlay h3 i {
+  color: #2196f3;
+  font-size: 15px;
+}
+.options-overlay.dark-mode .help-card-overlay h3 i {
+  color: #90caf9;
+}
+.help-card-overlay .help-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.help-card-overlay .help-list li {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+.help-card-overlay .help-list li:last-child {
+  margin-bottom: 0;
+}
+.options-overlay.dark-mode .help-card-overlay .help-list li {
+  color: #bbb;
+}
+
+/* Compact task list */
+#taskList.compact .task-item {
+  padding: 5px 8px;
+}
+#taskList.compact .task-name {
+  font-size: 13px;
+}
+#taskList.compact .task-time {
+  font-size: 11px;
+}
+
+/* Warning pulse on footer */
+@keyframes warning-pulse {
+  0%, 100% { background-color: inherit; }
+  50% { background-color: rgba(255, 80, 80, 0.12); }
+}
+.controls-footer.warning {
+  animation: warning-pulse 1s ease-in-out infinite;
+}
+.controls-footer.warning .progress-bar {
+  background: #e53935;
+}
+
+/* Task count in footer */
+.timer-count {
+  font-size: 12px;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Range input in settings */
+.option-row--field input[type="range"] {
+  width: 100%;
+  box-sizing: border-box;
+  accent-color: #2196f3;
+  cursor: pointer;
+}
+
+/* Color input in settings */
+.option-row--field input[type="color"] {
+  width: 48px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #cdd2db;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+.options-overlay.dark-mode .option-row--field input[type="color"] {
+  border-color: #4a4a4c;
+}
+
 /* Basic page/container styling */
 html,
 body {
@@ -45,32 +286,152 @@ h1 {
   color: #555;
 }
 
-/* Options menu (unified styles) */
+/* ===================================================
+   Options menu — settings card
+   =================================================== */
 .options-menu {
   display: none; /* toggled in code */
-  margin-bottom: 20px; /* kept 20px for spacing */
-  background: #fafafa;
-  border: 1px solid #ccc; /* unified border color */
-  border-radius: 8px; /* consistent with container/sections */
-  padding: 10px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #dde1e9;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .options-menu h3 {
-  margin: 0 0 10px;
-  font-size: 16px;
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
   text-align: center;
+  color: #222;
+  letter-spacing: 0.01em;
 }
 
+/* Section group: Audio, Voice, etc. */
+.options-section {
+  margin-bottom: 16px;
+}
+.options-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Small uppercase section heading */
+.options-section-label {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2196f3;
+}
+
+/* Base row */
 .option-row {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
 }
+.option-row:last-child {
+  margin-bottom: 0;
+}
 
+/* Label shared by both row variants */
+.option-row label:first-child {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.3;
+}
+
+/* Toggle rows: label left, switch right, full width */
+.option-row--toggle {
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #f7f8fa;
+  border-radius: 6px;
+  border: 1px solid #e8eaf0;
+}
+.option-row--toggle label:first-child {
+  flex: 1;
+  font-weight: 500;
+  color: #222;
+}
+
+/* Field rows: label fixed-width, input grows */
+.option-row--field {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.option-row--field label:first-child {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  padding-left: 2px;
+}
+.option-row--field select,
+.option-row--field input[type="text"] {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 14px;
+  border: 1px solid #cdd2db;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  appearance: auto;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.option-row--field select:focus,
+.option-row--field input[type="text"]:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.12);
+}
+
+/* --- Dark mode --- */
+.options-menu.dark-mode {
+  background: #252526;
+  border-color: #3a3a3c;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.options-menu.dark-mode h3 {
+  color: #f0f0f0;
+}
+.options-menu.dark-mode .options-section-label {
+  color: #90caf9;
+}
+.options-menu.dark-mode .option-row--toggle {
+  background: #2e2e30;
+  border-color: #3a3a3c;
+}
+.options-menu.dark-mode .option-row--toggle label:first-child {
+  color: #e8e8e8;
+}
+.options-menu.dark-mode .option-row--field label:first-child {
+  color: #aaa;
+}
+.options-menu.dark-mode .option-row--field select,
+.options-menu.dark-mode .option-row--field input[type="text"] {
+  background: #333;
+  color: #f0f0f0;
+  border-color: #4a4a4c;
+}
+.options-menu.dark-mode .option-row--field select:focus,
+.options-menu.dark-mode .option-row--field input[type="text"]:focus {
+  border-color: #90caf9;
+  box-shadow: 0 0 0 3px rgba(144, 202, 249, 0.15);
+}
+
+/* Preserve legacy .option-row label rule for any unmodified rows */
 .option-row label {
   font-size: 14px;
   color: #333;
+}
+.option-row.dark-mode label {
+  color: #fff;
 }
 
 /* === Tab bar === */
@@ -1249,15 +1610,18 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
     border-right: none;
   }
 
-  /* Options selects/inputs fill available width */
-  .option-row {
-    flex-wrap: wrap;
+  /* Options: tighter padding on mobile, 16px font to prevent iOS zoom */
+  .options-menu {
+    padding: 12px;
   }
-  .options-menu select,
-  .options-menu input[type="text"] {
-    flex: 1 1 100%;
-    min-width: 0;
-    font-size: 16px;
+  .option-row--toggle {
+    padding: 10px 12px;
+    min-height: 44px; /* touch target */
+  }
+  .option-row--field select,
+  .option-row--field input[type="text"] {
+    font-size: 16px; /* prevents iOS auto-zoom */
+    min-height: 44px;
   }
 
   /* Help grid: single column */
@@ -1341,15 +1705,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   border-top-color: #64b5f6;
 }
 
-/* === Dark mode option panel selects (item 11) === */
-.options-menu.dark-mode select,
-.options-menu.dark-mode input[type="text"] {
-  background: #333;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 4px 8px;
-}
+/* === Dark mode option panel selects (item 11) — handled by .option-row--field rules above === */
 
 /* === Desktop hover-only drag handles (item 12) === */
 @media (hover: hover) {
