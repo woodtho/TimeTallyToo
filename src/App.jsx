@@ -1004,61 +1004,65 @@ export default function App() {
         </div>
         <div className="options-overlay-body help-overlay-body">
           <div className="help-card-overlay">
-            <h3><i className="fas fa-list-check" /> Tasks &amp; Timing</h3>
+            <h3><i className="fas fa-circle-play" /> Getting started</h3>
             <ul className="help-list">
-              <li><b>Add tasks:</b> Enter a task name and duration, choose units, then press <span className="kbd">+</span>.</li>
-              <li><b>Select current:</b> Click any task row to set it as current.</li>
-              <li><b>Enable/disable:</b> Use the toggle on each task to include or exclude it from the run.</li>
-              <li><b>Start/Pause:</b> Use <span className="btn-chip">Start</span> and <span className="btn-chip">Pause</span>.</li>
-              <li><b>Skip:</b> Jumps to the next enabled task without changing remaining time.</li>
-              <li><b>Complete early:</b> Marks the current task done immediately and advances.</li>
-              <li><b>Restart:</b> Resets all tasks' remaining time to their original durations.</li>
+              <li><b>Add a task:</b> Enter a name and duration, choose seconds / minutes / hours, then press <span className="kbd">+</span>.</li>
+              <li><b>Set current task:</b> Click any task row to make it the active task.</li>
+              <li><b>Enable / disable:</b> Use the toggle on each task to include or skip it during a run.</li>
+              <li><b>Multiple lists:</b> Create separate lists (tabs) for different focus blocks, study sets, or circuits. Settings are saved per list.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
-            <h3><i className="fab fa-youtube" /> YouTube Playlists</h3>
+            <h3><i className="fas fa-stopwatch" /> Timer controls</h3>
             <ul className="help-list">
-              <li><b>Create a video task:</b> Paste a YouTube URL directly in the Task Name field.</li>
-              <li><b>Auto-play:</b> Playback begins automatically when a video task becomes current.</li>
-              <li><b>Import support:</b> Imported lists auto-detect YouTube URLs and embed videos.</li>
+              <li><b>Start / Pause:</b> Start or pause the timer for the current task.</li>
+              <li><b>Skip:</b> Jump to the next enabled task; remaining time on the skipped task is unchanged.</li>
+              <li><b>Complete:</b> Mark the current task done immediately and advance to the next.</li>
+              <li><b>Restart:</b> Reset all tasks to their original durations and return to the first task.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
-            <h3><i className="fas fa-pen-to-square" /> Editing &amp; Menus</h3>
+            <h3><i className="fas fa-sliders" /> Settings</h3>
             <ul className="help-list">
-              <li><b>Quick actions:</b> Use the <span className="dots">…</span> button on a task for Edit/Delete.</li>
-              <li><b>Edit:</b> Change the task name and total time. Remaining updates when total changes.</li>
-              <li><b>List menus:</b> Use the <span className="dots">…</span> on a tab for Rename/Delete.</li>
+              <li><b>Display:</b> Choose what the timer bar shows (task name, time, percentage, task count, ETA). Toggle compact task rows and the progress bar scope (whole list or current task).</li>
+              <li><b>Timer:</b> Auto-start next task, count up or down, and set a warning highlight when time is low.</li>
+              <li><b>Audio:</b> Enable a beep on task start. Set volume, tone (low / medium / high), and how many beeps play.</li>
+              <li><b>Voice:</b> Enable text-to-speech. Choose a system voice and what gets announced (task name, duration, a custom message, or a random affirmation).</li>
+              <li><b>General:</b> Set the default time unit for new tasks.</li>
+              <li>Settings are saved per list — each list can have its own audio, voice, and display preferences.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
-            <h3><i className="fas fa-arrows-up-down-left-right" /> Reordering</h3>
+            <h3><i className="fas fa-pen-to-square" /> Editing &amp; reordering</h3>
             <ul className="help-list">
-              <li><b>Tasks:</b> Press and drag anywhere on a task row to reorder.</li>
-              <li><b>Lists:</b> Drag tabs to rearrange list order.</li>
+              <li><b>Edit a task:</b> Open the <span className="dots">…</span> menu on a task and choose Edit. Change the name or total duration; remaining time resets when the duration changes.</li>
+              <li><b>Delete a task:</b> Open the <span className="dots">…</span> menu and choose Delete.</li>
+              <li><b>Reorder tasks:</b> Drag using the grip handle (<i className="fas fa-grip-vertical" />) on the left of each task row.</li>
+              <li><b>List tabs:</b> Open the <span className="dots">…</span> on a tab to rename or delete the list. Drag tabs to rearrange their order.</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fab fa-youtube" /> YouTube support</h3>
+            <ul className="help-list">
+              <li><b>Add a video task:</b> Paste any YouTube URL into the task name field. Supports youtube.com, youtu.be, Shorts, and embed links.</li>
+              <li><b>Auto-play:</b> The embedded player starts automatically when that task becomes active and pauses when you switch tasks.</li>
+              <li><b>Import:</b> YouTube URLs in imported XML files are auto-detected and embedded.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
             <h3><i className="fas fa-file-import" /> Import / Export</h3>
             <ul className="help-list">
-              <li><b>Export:</b> Downloads an XML snapshot including YouTube metadata.</li>
-              <li><b>Import:</b> XML files automatically detect YouTube URLs and embed videos.</li>
-            </ul>
-          </div>
-          <div className="help-card-overlay">
-            <h3><i className="fas fa-cloud" /> Persistence &amp; Sync</h3>
-            <ul className="help-list">
-              <li><b>Auto-save:</b> All lists, progress, and settings persist in the browser.</li>
-              <li><b>Cross-tab sync:</b> Changes propagate immediately across open tabs.</li>
-              <li><b>Dark mode:</b> Toggle from the header. Theme preference persists.</li>
+              <li><b>Export:</b> Downloads all your lists as an XML file, including task durations, remaining time, and YouTube metadata.</li>
+              <li><b>Import:</b> Load an XML file to add lists and tasks. Existing lists with the same name are appended to, not replaced.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
             <h3><i className="fas fa-circle-question" /> Tips</h3>
             <ul className="help-list">
-              <li>Use multiple lists to separate focus blocks, study sets, or workout circuits.</li>
-              <li>Disable tasks you want to skip without losing their setup.</li>
-              <li>Keep YouTube tasks near relevant steps; auto-play aligns video and timing.</li>
+              <li>Everything saves automatically in your browser — no account needed.</li>
+              <li>Open TimeTallyToo in multiple tabs; changes sync instantly between them.</li>
+              <li>Install as an app from your browser menu for a distraction-free experience.</li>
+              <li>Disable tasks you want to skip without deleting them.</li>
             </ul>
           </div>
         </div>
@@ -1079,25 +1083,6 @@ export default function App() {
           </button>
         </div>
         <div className="options-overlay-body">
-          <div className="options-section">
-            <p className="options-section-label">Audio</p>
-            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
-              <label htmlFor="beepCheckbox">Enable Beep</label>
-              <div className="enable-checkbox-wrapper">
-                <input type="checkbox" id="beepCheckbox" className="enable-checkbox" checked={!!config.beepEnabled}
-                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepEnabled = e.target.checked; })} />
-                <label className="enable-checkbox-label" htmlFor="beepCheckbox"></label>
-              </div>
-            </div>
-            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
-              <label htmlFor="ttsCheckbox">Enable Text-to-Speech</label>
-              <div className="enable-checkbox-wrapper">
-                <input type="checkbox" id="ttsCheckbox" className="enable-checkbox" checked={!!config.ttsEnabled}
-                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsEnabled = e.target.checked; })} />
-                <label className="enable-checkbox-label" htmlFor="ttsCheckbox"></label>
-              </div>
-            </div>
-          </div>
           <div className="options-section">
             <p className="options-section-label">Display</p>
             <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
@@ -1202,6 +1187,14 @@ export default function App() {
 
           <div className="options-section">
             <p className="options-section-label">Audio</p>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="beepCheckbox">Enable beep</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="beepCheckbox" className="enable-checkbox" checked={!!config.beepEnabled}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].beepEnabled = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="beepCheckbox"></label>
+              </div>
+            </div>
             <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
               <label htmlFor="beepVolume">Beep volume ({Math.round((config.beepVolume ?? 0.3) * 100)}%)</label>
               <input type="range" id="beepVolume" min="0" max="1" step="0.05"
@@ -1244,6 +1237,14 @@ export default function App() {
 
           <div className="options-section">
             <p className="options-section-label">Voice</p>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="ttsCheckbox">Enable text-to-speech</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="ttsCheckbox" className="enable-checkbox" checked={!!config.ttsEnabled}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].ttsEnabled = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="ttsCheckbox"></label>
+              </div>
+            </div>
             <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
               <label htmlFor="voiceSelect">Voice</label>
               <select id="voiceSelect" value={config.selectedVoiceName || (voices[0]?.name || "")}
@@ -1281,7 +1282,7 @@ export default function App() {
           <button
             id="toggleOptionsButton"
             className="gear-button"
-            title="Toggle Settings"
+            title="Settings"
             aria-label="Open settings"
             onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); patch((n) => { n.showOptions = !n.showOptions; }); }}
           >
@@ -1299,7 +1300,7 @@ export default function App() {
           <button
             id="toggleDarkModeButton"
             className="dark-mode-button"
-            title="Toggle Dark Mode"
+            title="Toggle dark mode"
             aria-label="Toggle dark mode"
             onClick={() => patch((n) => { n.dark = !n.dark; })}
           >
@@ -1473,7 +1474,7 @@ export default function App() {
             type="text"
             id="taskName"
             ref={taskNameRef}
-            placeholder="Task Name or YouTube URL"
+            placeholder="Task name or YouTube URL"
             onKeyDown={(e) => { if (e.key === "Enter") taskTimeRef.current?.focus(); }}
           />
           <label htmlFor="taskTime" className="sr-only">Duration</label>
@@ -1484,12 +1485,12 @@ export default function App() {
             placeholder="Time"
             onKeyDown={(e) => { if (e.key === "Enter") addTaskUI(); }}
           />
-          <select key={config.defaultTimeUnit} id="timeUnit" ref={timeUnitRef} aria-label="Time Unit" defaultValue={config.defaultTimeUnit || "minutes"}>
+          <select key={config.defaultTimeUnit} id="timeUnit" ref={timeUnitRef} aria-label="Time unit" defaultValue={config.defaultTimeUnit || "minutes"}>
             <option value="seconds">Seconds</option>
             <option value="minutes">Minutes</option>
             <option value="hours">Hours</option>
           </select>
-          <button onClick={addTaskUI} title="Add Task" aria-label="Add task">
+          <button onClick={addTaskUI} title="Add task" aria-label="Add task">
             <i className="fas fa-plus" />
           </button>
         </div>

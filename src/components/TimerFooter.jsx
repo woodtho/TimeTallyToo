@@ -80,19 +80,19 @@ const TimerFooter = React.memo(function TimerFooter({
         <button
           className={isRunning ? "btn-pause" : "btn-start"}
           onClick={isRunning ? pauseTimer : startTimer}
-          title={isRunning ? "Pause Timer" : "Start Timer"}
+          title={isRunning ? "Pause timer" : "Start timer"}
           aria-label={isRunning ? "Pause timer" : "Start timer"}
         >
           <i className={`fas fa-${isRunning ? "pause" : "play"}`} />
           {isRunning ? " Pause" : " Start"}
         </button>
-        <button className="btn-skip" onClick={skipTask} title="Skip Current Task" aria-label="Skip current task">
+        <button className="btn-skip" onClick={skipTask} title="Skip current task" aria-label="Skip current task">
           <i className="fas fa-forward" /> Skip
         </button>
-        <button className="btn-complete" onClick={completeEarly} title="Complete Early" aria-label="Complete current task early">
+        <button className="btn-complete" onClick={completeEarly} title="Complete current task early" aria-label="Complete current task early">
           <i className="fas fa-check" /> Complete
         </button>
-        <button className="btn-red" onClick={restartList} title="Restart All Tasks" aria-label="Restart all tasks">
+        <button className="btn-red" onClick={restartList} title="Restart all tasks" aria-label="Restart all tasks">
           <i className="fas fa-undo-alt" /> Restart
         </button>
       </div>
