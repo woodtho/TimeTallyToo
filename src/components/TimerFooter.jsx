@@ -1,5 +1,4 @@
 import React from "react";
-import { formatHMS, isYouTubeUrl } from "../utils/helpers";
 
 /* Fix #9: Extracted from App.jsx to isolate the footer/timer display from the
    200ms setState tick. React.memo prevents re-renders when timer props are
