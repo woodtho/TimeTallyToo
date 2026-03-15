@@ -88,6 +88,9 @@ const TaskList = React.memo(function TaskList({
   editValues,
   menuOpenTask,
   listRef,
+  newTaskId,
+  skipAnim,
+  droppedIndex,
   // callbacks
   editTask,
   removeTask,
@@ -103,7 +106,19 @@ const TaskList = React.memo(function TaskList({
       {tasks.map((t, i) => {
         const isCurrent = i === currentTaskIndex;
         const isCompleted = t.remaining === 0 && t.time > 0;
-        const itemCls = `task-item${isCurrent ? " current" : ""}${isCurrent && isRunning && config.whimsyRowPulse !== false ? " timer-running" : ""}${isCompleted && config.whimsyStrikeThrough !== false ? " completed" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${dark ? " dark-mode" : ""}`;
+        const itemCls = [
+          "task-item",
+          isCurrent ? "current" : "",
+          isCurrent && isRunning && config.whimsyRowPulse !== false ? "timer-running" : "",
+          isCompleted && config.whimsyStrikeThrough !== false ? "completed" : "",
+          !t.enabled ? "disabled" : "",
+          t.editing ? "editing" : "",
+          dark ? "dark-mode" : "",
+          t.id === newTaskId ? "task-item--new" : "",
+          skipAnim?.from === i ? "task-item--skip-out" : "",
+          skipAnim?.to === i ? "task-item--skip-in" : "",
+          droppedIndex === i ? "task-item--dropped" : "",
+        ].filter(Boolean).join(" ");
         // Validate ytId against the strict 11-char regex before embedding
         const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
 

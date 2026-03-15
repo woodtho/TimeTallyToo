@@ -298,6 +298,10 @@ export default function App() {
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [startPulse, setStartPulse] = useState(false);   // start-button ring animation
+  const [newTaskId, setNewTaskId] = useState(null);       // slide-in for just-added task
+  const [skipAnim, setSkipAnim] = useState(null);         // { from, to } for skip swipe
+  const [droppedIndex, setDroppedIndex] = useState(null); // landing ripple after drag
   const [affirmationToast, setAffirmationToast] = useState(null);
   const [completionFlash, setCompletionFlash] = useState(false);
   const [listComplete, setListComplete] = useState(false);
@@ -328,6 +332,7 @@ export default function App() {
   const listRef = useRef(null);
   const draggingTask = useRef(null);
   const pointerActive = useRef(false);
+  const didReorderRef = useRef(false); // tracks whether a drag actually moved a task
 
   /* Theme sync */
   useEffect(() => {
@@ -541,6 +546,7 @@ export default function App() {
 
   const currentTask = tasks[state.currentTaskIndex];
   const isWarning = config.warningThreshold > 0 && (currentTask?.remaining ?? 0) <= config.warningThreshold && (currentTask?.remaining ?? 0) > 0;
+  const isLastFive = isRunning && !!(currentTask && currentTask.remaining > 0 && currentTask.remaining <= 5);
   const timerDisplayTime = config.timerDirection === "countup"
     ? (currentTask ? currentTask.time - currentTask.remaining : 0)
     : (currentTask?.remaining ?? 0);
@@ -644,6 +650,15 @@ export default function App() {
       n.currentTaskIndex = 0;
       n.isListCreating = false;
     });
+    // Spring-in animation on the new tab after React paints it
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const tabEl = document.querySelector(`[data-list-name="${CSS.escape(name)}"]`);
+        if (!tabEl) return;
+        tabEl.classList.add("tab--arrived");
+        tabEl.addEventListener("animationend", () => tabEl.classList.remove("tab--arrived"), { once: true });
+      });
+    });
   }
 
   function renameList(oldName, newName) {
@@ -662,15 +677,24 @@ export default function App() {
 
   function deleteList(name) {
     if (state.listOrder.length <= 1) return;
-    if (name === state.currentList) pauseTimer();
-    patch((n) => {
-      delete n.lists[name];
-      delete n.listConfigs[name];
-      delete n.listStats[name];
-      n.listOrder = n.listOrder.filter((x) => x !== name);
-      if (n.currentList === name) n.currentList = n.listOrder[0];
-      n.currentTaskIndex = 0;
-    });
+    const doDelete = () => {
+      if (name === state.currentList) pauseTimer();
+      patch((n) => {
+        delete n.lists[name];
+        delete n.listConfigs[name];
+        delete n.listStats[name];
+        n.listOrder = n.listOrder.filter((x) => x !== name);
+        if (n.currentList === name) n.currentList = n.listOrder[0];
+        n.currentTaskIndex = 0;
+      });
+    };
+    const tabEl = document.querySelector(`[data-list-name="${CSS.escape(name)}"]`);
+    if (tabEl) {
+      tabEl.classList.add("tab--removing");
+      setTimeout(doDelete, 220);
+    } else {
+      doDelete();
+    }
   }
 
   function reorderList(oldIdx, newIdx) {
@@ -689,12 +713,12 @@ export default function App() {
     if (!name || !amt || amt <= 0) return;
     const toSeconds = unit === "seconds" ? secs : unit === "minutes" ? mins : hours;
     const t = toSeconds(amt);
+    const norm = normalizeTaskFromName(name, t);
     patch((n) => {
-      const listTasks = n.lists[n.currentList];
-      // Normalize so YT URL inputs get meta immediately
-      const norm = normalizeTaskFromName(name, t);
-      listTasks.push(norm);
+      n.lists[n.currentList].push(norm);
     });
+    setNewTaskId(norm.id);
+    setTimeout(() => setNewTaskId(null), 350);
     if (taskNameRef.current) taskNameRef.current.value = "";
     if (taskTimeRef.current) taskTimeRef.current.value = "";
     taskNameRef.current?.focus();
@@ -760,6 +784,7 @@ export default function App() {
     }
     pointerActive.current = true;
     draggingTask.current = i;
+    didReorderRef.current = false;
     e.currentTarget.setPointerCapture?.(e.pointerId);
     document.body.style.touchAction = "none"; // prevent scroll during drag on mobile
   }
@@ -772,14 +797,21 @@ export default function App() {
     if (from !== to) {
       reorderTask(from, to);
       draggingTask.current = to;
+      didReorderRef.current = true;
     }
   }
 
   function onTaskPointerUp() {
     if (!pointerActive.current) return;
+    const finalIdx = draggingTask.current;
     pointerActive.current = false;
     draggingTask.current = null;
     document.body.style.touchAction = "";
+    if (didReorderRef.current && finalIdx !== null) {
+      setDroppedIndex(finalIdx);
+      setTimeout(() => setDroppedIndex(null), 500);
+    }
+    didReorderRef.current = false;
   }
 
   /* Timer + TTS */
@@ -1025,6 +1057,8 @@ export default function App() {
 
   function startTimer() {
     if (timerRef.current) return;
+    setStartPulse(true);
+    setTimeout(() => setStartPulse(false), 400);
     // Create AudioContext during the user gesture so it starts in "running" state immediately
     try {
       if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
@@ -1068,6 +1102,8 @@ export default function App() {
     const arr = s.lists[s.currentList] || [];
     const nxt = nextEnabledIndexFrom(arr, s.currentTaskIndex + 1);
     if (nxt === -1) { showIoStatus("error", "No next task."); return; }
+    setSkipAnim({ from: s.currentTaskIndex, to: nxt });
+    setTimeout(() => setSkipAnim(null), 280);
     const wasRunning = !!timerRef.current;
     pauseAllYouTube();
     beep();
@@ -1899,6 +1935,9 @@ export default function App() {
         editValues={editValues}
         menuOpenTask={menuOpenTask}
         listRef={listRef}
+        newTaskId={newTaskId}
+        skipAnim={skipAnim}
+        droppedIndex={droppedIndex}
         editTask={editTask}
         removeTask={removeTask}
         patch={patch}
@@ -1921,6 +1960,8 @@ export default function App() {
         dark={state.dark}
         isRunning={isRunning}
         isWarning={isWarning}
+        isLastFive={isLastFive}
+        startPulse={startPulse}
         completionFlash={completionFlash}
         currentTask={currentTask}
         progress={progress}

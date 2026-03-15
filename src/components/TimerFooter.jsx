@@ -37,6 +37,8 @@ const TimerFooter = React.memo(function TimerFooter({
   dark,
   isRunning,
   isWarning,
+  isLastFive,
+  startPulse,
   completionFlash,
   currentTask,
   progress,
@@ -68,7 +70,9 @@ const TimerFooter = React.memo(function TimerFooter({
             <div className="timer-count">{currentEnabledPos} / {enabledTaskCount}</div>
           )}
           {config.timerShowRemaining && (
-            <div className="timer-remaining">{_formatHMS(timerDisplayTime)}</div>
+            <div className={`timer-remaining${isWarning ? " timer-remaining--warn" : ""}${isLastFive && !isWarning ? " timer-remaining--countdown" : ""}`}>
+              {_formatHMS(timerDisplayTime)}
+            </div>
           )}
           {config.timerShowPercent && (
             <div id="timerPercent" className="timer-percent">{progress}%</div>
@@ -79,7 +83,7 @@ const TimerFooter = React.memo(function TimerFooter({
       {/* Controls */}
       <div className="controls">
         <button
-          className={isRunning ? "btn-pause" : "btn-start"}
+          className={`${isRunning ? "btn-pause" : "btn-start"}${startPulse ? " btn-start--pulse" : ""}`}
           onClick={isRunning ? pauseTimer : startTimer}
           title={isRunning ? "Pause timer" : "Start timer"}
           aria-label={isRunning ? "Pause timer" : "Start timer"}
