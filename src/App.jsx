@@ -39,7 +39,20 @@ const defaultConfig = () => ({
   compactTasks: false,
   // Input
   defaultTimeUnit: "minutes",
+  // Celebrations (per-list whimsy toggles)
+  whimsyAffirmationToast: true,
+  whimsyCompletionFlash: true,
+  whimsyRowPulse: true,
+  whimsyStrikeThrough: true,
+  whimsyListComplete: true,
+  whimsyCompletionChord: true,
+});
 
+const defaultListStats = () => ({
+  tasksCompleted: 0,
+  timeWorked: 0,      // cumulative seconds
+  sessionsCompleted: 0,
+  lastSession: null,  // ISO 8601 string or null
 });
 
 const defaultState = () => ({
@@ -48,6 +61,7 @@ const defaultState = () => ({
   currentList: "default",
   currentTaskIndex: 0,
   listConfigs: { default: defaultConfig() },
+  listStats: { default: defaultListStats() },
   dark: true,
   showHelp: false,
   showOptions: false,
@@ -146,10 +160,18 @@ function loadState() {
       mergedConfigs[k] = { ...defaultConfig(), ...cfg };
     }
     if (!mergedConfigs.default) mergedConfigs.default = defaultConfig();
+    // Same deep-merge for listStats so new stat fields get defaults automatically.
+    const parsedStats = parsed?.listStats || {};
+    const mergedStats = {};
+    for (const [k, s] of Object.entries(parsedStats)) {
+      mergedStats[k] = { ...defaultListStats(), ...s };
+    }
+    if (!mergedStats.default) mergedStats.default = defaultListStats();
     const merged = {
       ...defaultState(),
       ...parsed,
       listConfigs: mergedConfigs,
+      listStats: mergedStats,
     };
     // Run migrations so any old data with YT URLs but no meta still embeds,
     // and any tasks missing a stable id get one assigned.
@@ -172,6 +194,7 @@ function serializeState(state) {
     currentList: state.currentList,
     currentTaskIndex: state.currentTaskIndex,
     listConfigs: state.listConfigs,
+    listStats: state.listStats,
     dark: state.dark,
     showHelp: state.showHelp,
     showOptions: state.showOptions,
@@ -274,6 +297,7 @@ export default function App() {
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [affirmationToast, setAffirmationToast] = useState(null);
   const [completionFlash, setCompletionFlash] = useState(false);
   const [listComplete, setListComplete] = useState(false);
@@ -295,6 +319,7 @@ export default function App() {
   const timerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const lastTick = useRef(null);
+  const sessionAccrualRef = useRef(0); // accumulates elapsed seconds during a running session
   const draggedTabIndex = useRef(null);
   const bcRef = useRef(null);                               // BroadcastChannel ref
   const importFileRef = useRef(null); // Fix #2: replaces document.getElementById("importFile")
@@ -476,6 +501,41 @@ export default function App() {
     [state.currentList]
   );
 
+  /* Stats helpers */
+  const currentListStats = useMemo(
+    () => ({ ...defaultListStats(), ...(state.listStats?.[state.currentList] || {}) }),
+    [state.listStats, state.currentList]
+  );
+  const allStats = useMemo(() => {
+    const all = Object.values(state.listStats || {});
+    return {
+      tasksCompleted: all.reduce((a, s) => a + (s.tasksCompleted || 0), 0),
+      timeWorked: all.reduce((a, s) => a + (s.timeWorked || 0), 0),
+      sessionsCompleted: all.reduce((a, s) => a + (s.sessionsCompleted || 0), 0),
+    };
+  }, [state.listStats]);
+
+  function formatTimeWorked(seconds) {
+    const s = Math.floor(seconds || 0);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const r = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${r}s`;
+    return `${r}s`;
+  }
+
+  function formatLastSession(iso) {
+    if (!iso) return "never";
+    try {
+      return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    } catch { return "—"; }
+  }
+
+  function resetCurrentListStats() {
+    patch((n) => { n.listStats[n.currentList] = defaultListStats(); });
+  }
+
   const etaText = useMemo(() => {
     const secsLeft = sumEnabledRemaining(tasks);
     if (secsLeft <= 0) return "";
@@ -496,13 +556,14 @@ export default function App() {
       ...s,
       lists: { ...s.lists },
       listConfigs: { ...s.listConfigs },
+      listStats: { ...s.listStats },
     };
-    // Shallow-copy the current list array and its config to avoid mutating the
-    // previous state — required by React's immutability contract and safe under
-    // StrictMode / concurrent features.
+    // Shallow-copy the current list's array, config, and stats to avoid mutating
+    // the previous state — required by React's immutability contract.
     const cl = s.currentList;
     if (next.lists[cl]) next.lists[cl] = [...next.lists[cl]];
     if (next.listConfigs[cl]) next.listConfigs[cl] = { ...next.listConfigs[cl] };
+    if (next.listStats[cl]) next.listStats[cl] = { ...next.listStats[cl] };
     fn(next);
     return next;
   });
@@ -525,6 +586,7 @@ export default function App() {
       n.lists[name] = [];
       n.listOrder.push(name);
       n.listConfigs[name] = defaultConfig();
+      n.listStats[name] = defaultListStats();
       n.currentList = name;
       n.currentTaskIndex = 0;
       n.isListCreating = false;
@@ -538,6 +600,8 @@ export default function App() {
       delete n.lists[oldName];
       n.listConfigs[newName] = n.listConfigs[oldName];
       delete n.listConfigs[oldName];
+      n.listStats[newName] = n.listStats[oldName] || defaultListStats();
+      delete n.listStats[oldName];
       n.listOrder = n.listOrder.map((x) => (x === oldName ? newName : x));
       if (n.currentList === oldName) n.currentList = newName;
     });
@@ -549,6 +613,7 @@ export default function App() {
     patch((n) => {
       delete n.lists[name];
       delete n.listConfigs[name];
+      delete n.listStats[name];
       n.listOrder = n.listOrder.filter((x) => x !== name);
       if (n.currentList === name) n.currentList = n.listOrder[0];
       n.currentTaskIndex = 0;
@@ -708,6 +773,33 @@ export default function App() {
     }
   }
 
+  function beepChord() {
+    const cfg = configRef.current;
+    if (!cfg?.beepEnabled || !cfg?.whimsyCompletionChord) return;
+    const ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === "closed") return;
+    const root = { low: 330, medium: 660, high: 990 }[cfg.beepTone || "medium"] ?? 660;
+    const notes = [root, root * 1.25, root * 1.5];
+    const volume = cfg.beepVolume ?? 0.3;
+    const doPlay = () => {
+      try {
+        notes.forEach((hz, i) => {
+          const t0 = ctx.currentTime + i * 0.08;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = "sine";
+          osc.frequency.value = hz;
+          gain.gain.setValueAtTime(volume, t0);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.7);
+          osc.start(t0); osc.stop(t0 + 0.7);
+        });
+      } catch { /* ignore */ }
+    };
+    if (ctx.state === "suspended") ctx.resume().then(doPlay).catch(() => {});
+    else doPlay();
+  }
+
   /* Kept for call-sites outside the interval that pass state directly */
   function nextEnabledIndex(start) {
     return nextEnabledIndexFrom(stateRef.current.lists[stateRef.current.currentList] || [], start);
@@ -745,11 +837,12 @@ export default function App() {
     const cfg = configRef.current;
     if (cfg?.ttsMode === "customCompletion") speak(cfg.ttsCustomMessage || "Task completed");
     else if (cfg?.ttsMode === "randomAffirmation") speak(affirmations[Math.floor(Math.random() * affirmations.length)]);
-    // Always show the visual affirmation toast, independent of TTS setting
-    const msg = affirmations[Math.floor(Math.random() * affirmations.length)];
-    setAffirmationToast(msg);
-    clearTimeout(affirmationTimerRef.current);
-    affirmationTimerRef.current = setTimeout(() => setAffirmationToast(null), 2500);
+    if (cfg?.whimsyAffirmationToast !== false) {
+      const msg = affirmations[Math.floor(Math.random() * affirmations.length)];
+      setAffirmationToast(msg);
+      clearTimeout(affirmationTimerRef.current);
+      affirmationTimerRef.current = setTimeout(() => setAffirmationToast(null), 2500);
+    }
   }
 
   /* Core interval — extracted so both startTimer and completeEarly can reuse it */
@@ -796,6 +889,9 @@ export default function App() {
         }
       }
 
+      // Accrue elapsed time into ref (committed to state only on session end)
+      sessionAccrualRef.current += dt;
+
       // Apply state mutations
       patch((n) => {
         const arr = n.lists[n.currentList];
@@ -808,6 +904,8 @@ export default function App() {
           if (t.remaining <= timeLeft) {
             timeLeft -= t.remaining;
             t.remaining = 0;
+            if (!n.listStats[n.currentList]) n.listStats[n.currentList] = defaultListStats();
+            n.listStats[n.currentList].tasksCompleted += 1;
             const nxt = nextEnabledIndexFrom(arr, idx + 1);
             if (nxt === -1) break;
             if (!configRef.current?.autoAdvance) { n.currentTaskIndex = nxt; break; }
@@ -824,9 +922,10 @@ export default function App() {
       for (const fx of sideEffects) {
         if (fx.type === "complete") {
           announceComplete();
-          // Flash the progress bar briefly
-          setCompletionFlash(true);
-          setTimeout(() => setCompletionFlash(false), 450);
+          if (configRef.current?.whimsyCompletionFlash !== false) {
+            setCompletionFlash(true);
+            setTimeout(() => setCompletionFlash(false), 450);
+          }
         } else if (fx.type === "start") {
           beep();
           pauseAllYouTube();
@@ -848,10 +947,24 @@ export default function App() {
         const listDoneNaturally =
           sideEffects.some((fx) => fx.type === "complete") &&
           !sideEffects.some((fx) => fx.type === "advance");
+        // Commit accrued time to stats on session end
+        const accrued = sessionAccrualRef.current;
+        sessionAccrualRef.current = 0;
+        patch((n) => {
+          if (!n.listStats[n.currentList]) n.listStats[n.currentList] = defaultListStats();
+          n.listStats[n.currentList].timeWorked += accrued;
+          if (listDoneNaturally) {
+            n.listStats[n.currentList].sessionsCompleted += 1;
+            n.listStats[n.currentList].lastSession = new Date().toISOString();
+          }
+        });
         if (listDoneNaturally) {
-          setListComplete(true);
-          clearTimeout(listCompleteTimerRef.current);
-          listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
+          beepChord();
+          if (configRef.current?.whimsyListComplete !== false) {
+            setListComplete(true);
+            clearTimeout(listCompleteTimerRef.current);
+            listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
+          }
         }
       }
     }, 200);
@@ -885,6 +998,16 @@ export default function App() {
     timerRef.current = null;
     setIsRunning(false);
     pauseAllYouTube();
+    // Commit accrued time on pause
+    if (sessionAccrualRef.current > 0) {
+      const accrued = sessionAccrualRef.current;
+      sessionAccrualRef.current = 0;
+      const cl = stateRef.current.currentList;
+      setState((s) => {
+        const prev = s.listStats?.[cl] || defaultListStats();
+        return { ...s, listStats: { ...s.listStats, [cl]: { ...prev, timeWorked: prev.timeWorked + accrued } } };
+      });
+    }
   }
 
   function skipTask() {
@@ -925,15 +1048,28 @@ export default function App() {
         _startInterval();
       }
     } else {
-      // Last task completed manually — show the same celebration as natural completion
+      // Last task completed manually — commit stats + show celebration
+      const accrued = sessionAccrualRef.current;
+      sessionAccrualRef.current = 0;
+      patch((n) => {
+        if (!n.listStats[n.currentList]) n.listStats[n.currentList] = defaultListStats();
+        n.listStats[n.currentList].tasksCompleted += 1;
+        n.listStats[n.currentList].timeWorked += accrued;
+        n.listStats[n.currentList].sessionsCompleted += 1;
+        n.listStats[n.currentList].lastSession = new Date().toISOString();
+      });
       announceComplete();
-      setListComplete(true);
-      clearTimeout(listCompleteTimerRef.current);
-      listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
+      beepChord();
+      if (configRef.current?.whimsyListComplete !== false) {
+        setListComplete(true);
+        clearTimeout(listCompleteTimerRef.current);
+        listCompleteTimerRef.current = setTimeout(() => setListComplete(false), 4000);
+      }
     }
   }
 
   function restartTimer() {
+    sessionAccrualRef.current = 0;
     pauseTimer();
     setListComplete(false);
     clearTimeout(listCompleteTimerRef.current);
@@ -1073,6 +1209,38 @@ export default function App() {
     {affirmationToast && (
       <div className={`affirmation-toast${state.dark ? " dark-mode" : ""}`} aria-live="polite">
         <i className="fas fa-circle-check" /> {affirmationToast}
+      </div>
+    )}
+
+    {/* Stats full-screen overlay */}
+    {showStats && (
+      <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
+        <div className="options-overlay-header">
+          <span className="options-overlay-title">Stats</span>
+          <button className="options-close-button" onClick={() => setShowStats(false)} aria-label="Close">
+            <i className="fas fa-xmark" />
+          </button>
+        </div>
+        <div className="options-overlay-body">
+          <div className="stats-section">
+            <p className="options-section-label">{state.currentList}</p>
+            <div className="stats-grid">
+              <div className="stat-card"><i className="fas fa-check-circle stat-card-icon" /><span className="stat-card-value">{currentListStats.tasksCompleted}</span><span className="stat-card-label">Tasks completed</span></div>
+              <div className="stat-card"><i className="fas fa-clock stat-card-icon" /><span className="stat-card-value">{formatTimeWorked(currentListStats.timeWorked)}</span><span className="stat-card-label">Time worked</span></div>
+              <div className="stat-card"><i className="fas fa-flag-checkered stat-card-icon" /><span className="stat-card-value">{currentListStats.sessionsCompleted}</span><span className="stat-card-label">Sessions</span></div>
+              <div className="stat-card"><i className="fas fa-calendar stat-card-icon" /><span className="stat-card-value">{formatLastSession(currentListStats.lastSession)}</span><span className="stat-card-label">Last session</span></div>
+            </div>
+            <button className="stats-reset-btn" onClick={resetCurrentListStats}>Reset stats for this list</button>
+          </div>
+          <div className="stats-section">
+            <p className="options-section-label">All lists combined</p>
+            <div className="stats-grid">
+              <div className="stat-card"><i className="fas fa-check-circle stat-card-icon" /><span className="stat-card-value">{allStats.tasksCompleted}</span><span className="stat-card-label">Tasks completed</span></div>
+              <div className="stat-card"><i className="fas fa-clock stat-card-icon" /><span className="stat-card-value">{formatTimeWorked(allStats.timeWorked)}</span><span className="stat-card-label">Time worked</span></div>
+              <div className="stat-card"><i className="fas fa-flag-checkered stat-card-icon" /><span className="stat-card-value">{allStats.sessionsCompleted}</span><span className="stat-card-label">Sessions</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     )}
 
@@ -1315,6 +1483,64 @@ export default function App() {
           </div>
 
           <div className="options-section">
+            <p className="options-section-label">Celebrations</p>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyAffirmationToast">Affirmation toast on task complete</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyAffirmationToast" className="enable-checkbox"
+                  checked={config.whimsyAffirmationToast !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyAffirmationToast = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyAffirmationToast"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyCompletionFlash">Flash progress bar on task complete</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyCompletionFlash" className="enable-checkbox"
+                  checked={config.whimsyCompletionFlash !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyCompletionFlash = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyCompletionFlash"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyRowPulse">Pulse active task row</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyRowPulse" className="enable-checkbox"
+                  checked={config.whimsyRowPulse !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyRowPulse = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyRowPulse"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyStrikeThrough">Strike through completed tasks</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyStrikeThrough" className="enable-checkbox"
+                  checked={config.whimsyStrikeThrough !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyStrikeThrough = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyStrikeThrough"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyListComplete">Show celebration on list complete</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyListComplete" className="enable-checkbox"
+                  checked={config.whimsyListComplete !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyListComplete = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyListComplete"></label>
+              </div>
+            </div>
+            <div className={`option-row option-row--toggle${state.dark ? " dark-mode" : ""}`}>
+              <label htmlFor="whimsyCompletionChord">Play chord on list complete</label>
+              <div className="enable-checkbox-wrapper">
+                <input type="checkbox" id="whimsyCompletionChord" className="enable-checkbox"
+                  checked={config.whimsyCompletionChord !== false}
+                  onChange={(e) => patch((n) => { n.listConfigs[n.currentList].whimsyCompletionChord = e.target.checked; })} />
+                <label className="enable-checkbox-label" htmlFor="whimsyCompletionChord"></label>
+              </div>
+            </div>
+          </div>
+
+          <div className="options-section">
             <p className="options-section-label">General</p>
             <div className={`option-row option-row--field${state.dark ? " dark-mode" : ""}`}>
               <label htmlFor="defaultTimeUnit">Default time unit</label>
@@ -1382,6 +1608,14 @@ export default function App() {
           >
             <i className="fab fa-github" />
           </a>
+          <button
+            className="stats-button"
+            title="Stats"
+            aria-label="Open stats"
+            onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); setShowStats((v) => !v); }}
+          >
+            <i className="fas fa-chart-bar" />
+          </button>
           <button
             id="toggleOptionsButton"
             className="gear-button"

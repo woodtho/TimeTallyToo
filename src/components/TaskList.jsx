@@ -103,7 +103,7 @@ const TaskList = React.memo(function TaskList({
       {tasks.map((t, i) => {
         const isCurrent = i === currentTaskIndex;
         const isCompleted = t.remaining === 0 && t.time > 0;
-        const itemCls = `task-item${isCurrent ? " current" : ""}${isCurrent && isRunning ? " timer-running" : ""}${isCompleted ? " completed" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${dark ? " dark-mode" : ""}`;
+        const itemCls = `task-item${isCurrent ? " current" : ""}${isCurrent && isRunning && config.whimsyRowPulse !== false ? " timer-running" : ""}${isCompleted && config.whimsyStrikeThrough !== false ? " completed" : ""}${!t.enabled ? " disabled" : ""}${t.editing ? " editing" : ""}${dark ? " dark-mode" : ""}`;
         // Validate ytId against the strict 11-char regex before embedding
         const ytId = safeYtId(t?.meta?.ytId || (isYouTubeUrl(t.name) ? parseYouTubeId(t.name) : null));
 
