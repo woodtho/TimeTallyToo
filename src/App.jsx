@@ -359,6 +359,7 @@ export default function App() {
   const videoRef = useRef(null);      // video element driving Video PiP
   const [isPiPVideoActive, setIsPiPVideoActive] = useState(false);
   const silentAudioRef = useRef(null); // keeps MediaSession alive on mobile
+  const wakeLockRef = useRef(null);    // Screen Wake Lock — prevents auto-lock while timer runs
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -386,20 +387,23 @@ export default function App() {
   useEffect(() => { voicesRef.current = voices; }, [voices]);
 
   /* Keep YouTube in sync with page visibility (screen lock / app switch).
-     - On hide: wait 650 ms for YouTube's auto-pause to settle, then send
-       playVideo.  This lets audio continue during screen lock on devices
-       that allow background media.
-     - On show: resume immediately when the screen unlocks. */
+     - On show: resume YouTube and re-acquire wake lock (system releases it while hidden).
+     - On hide: no-op — wake lock keeps the screen from locking while timer runs,
+       so document.hidden should never become true during an active session.
+       The 650 ms retry is kept as a safety net for when wake lock is unavailable. */
   useEffect(() => {
     let hideTimer = null;
     function onVisibility() {
       clearTimeout(hideTimer);
       if (!timerRef.current) return;
       if (document.hidden) {
+        // Fallback: wake lock unavailable/denied — try to resume YouTube after its auto-pause
         hideTimer = setTimeout(() => {
           if (timerRef.current) playYouTubeIfAny(stateRef.current.currentTaskIndex);
         }, 650);
       } else {
+        // Page visible again — re-acquire wake lock (system released it) and resume YouTube
+        requestWakeLock();
         playYouTubeIfAny(stateRef.current.currentTaskIndex);
       }
     }
@@ -1194,6 +1198,7 @@ export default function App() {
         timerRef.current = null;
         pauseAllYouTube();
         setIsRunning(false);
+        releaseWakeLock();
         deactivateMediaSession();
         // Show celebration only when the list completed naturally (at least one task
         // completed and no "advance" side-effect, which would mean autoAdvance=false
@@ -1263,6 +1268,7 @@ export default function App() {
     pauseAllYouTube();
     playYouTubeIfAny(startIndex);
     _startInterval();
+    requestWakeLock();
     activateMediaSession(arr[startIndex]);
     // Resume canvas video if PiP is already open (e.g. user paused then resumed)
     if (videoRef.current && document.pictureInPictureElement === videoRef.current && videoRef.current.paused) {
@@ -1277,6 +1283,7 @@ export default function App() {
     setIsRunning(false);
     pauseCurrentYouTube();
     pauseAllYouTube(); // belt-and-suspenders
+    releaseWakeLock();
     deactivateMediaSession();
     // Pause canvas video so PiP shows the correct paused state
     if (videoRef.current && document.pictureInPictureElement === videoRef.current) {
@@ -1422,6 +1429,30 @@ export default function App() {
     } catch { /* denied or unsupported */ }
   }
 
+  /* ---- Screen Wake Lock — keep screen on so YouTube iframe never sees document.hidden ---- */
+  async function requestWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      // Release any stale lock first
+      if (wakeLockRef.current) {
+        try { await wakeLockRef.current.release(); } catch { /* ignore */ }
+        wakeLockRef.current = null;
+      }
+      const lock = await navigator.wakeLock.request("screen");
+      wakeLockRef.current = lock;
+      lock.addEventListener("release", () => {
+        // System released the lock (e.g. tab backgrounded); clear our ref
+        if (wakeLockRef.current === lock) wakeLockRef.current = null;
+      });
+    } catch { /* denied — low battery, or not supported */ }
+  }
+
+  function releaseWakeLock() {
+    if (!wakeLockRef.current) return;
+    try { wakeLockRef.current.release(); } catch { /* ignore */ }
+    wakeLockRef.current = null;
+  }
+
   /* ---- Media Session (Android/iOS lock-screen & notification controls) ---- */
   function _getSilentAudio() {
     if (silentAudioRef.current) return silentAudioRef.current;
@@ -1437,7 +1468,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
     const audio = new Audio(url);
     audio.loop = true;
-    audio.volume = 0.001; // near-silent; 0 gets suspended on some browsers
+    audio.volume = 0.01; // near-silent but loud enough for Android to treat as active audio
     silentAudioRef.current = audio;
     return audio;
   }
