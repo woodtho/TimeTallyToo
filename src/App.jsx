@@ -1306,11 +1306,13 @@ export default function App() {
     const video = videoRef.current;
     if (!canvas || !video) return;
     try {
-      if (!video.srcObject) {
-        video.srcObject = canvas.captureStream(4);
-        video.muted = true;
-        await video.play();
+      // Always recreate the stream — avoids reusing a dead/ended track
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach((t) => t.stop());
       }
+      video.srcObject = canvas.captureStream(4);
+      video.muted = true;
+      await video.play();
       drawTimerCanvas();
       await video.requestPictureInPicture();
       setIsPiPVideoActive(true);
@@ -2412,7 +2414,17 @@ export default function App() {
       style={{ position: "fixed", left: "-9999px", top: "-9999px", pointerEvents: "none" }}
       aria-hidden="true"
     />
-    <video ref={videoRef} muted playsInline
+    <video
+      ref={videoRef}
+      muted
+      playsInline
+      onPause={(e) => {
+        // When the screen locks the browser pauses the video, which would close PiP.
+        // Immediately resume so the PiP window stays open.
+        if (document.pictureInPictureElement === e.target) {
+          e.target.play().catch(() => {});
+        }
+      }}
       style={{ position: "fixed", left: "-9999px", top: "-9999px", width: 1, height: 1 }}
       aria-hidden="true"
     />
