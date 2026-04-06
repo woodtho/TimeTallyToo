@@ -355,6 +355,9 @@ export default function App() {
   const pipWindowRef = useRef(null);  // Document PiP window reference
   const pipRootRef = useRef(null);    // React root rendered inside the PiP window
   const [isPiPActive, setIsPiPActive] = useState(false);
+  const canvasRef = useRef(null);     // canvas drawn into the Video PiP
+  const videoRef = useRef(null);      // video element driving Video PiP
+  const [isPiPVideoActive, setIsPiPVideoActive] = useState(false);
   const silentAudioRef = useRef(null); // keeps MediaSession alive on mobile
 
   // task DnD (pointer-based for mobile + desktop)
@@ -382,20 +385,26 @@ export default function App() {
   /* Keep voicesRef current so timer callbacks never use stale closures */
   useEffect(() => { voicesRef.current = voices; }, [voices]);
 
-  /* Keep PiP overlay in sync with current timer state */
+  /* Keep PiP overlays in sync with current timer state */
   useEffect(() => {
-    if (!isPiPActive || !pipRootRef.current) return;
-    pipRootRef.current.render(
-      <PipOverlay
-        isRunning={isRunning}
-        currentTask={currentTask}
-        timerDisplayTime={timerDisplayTime}
-        progress={progress}
-        dark={state.dark}
-        startTimer={startTimer}
-        pauseTimer={pauseTimer}
-      />
-    );
+    // Document PiP (desktop Chrome)
+    if (isPiPActive && pipRootRef.current) {
+      pipRootRef.current.render(
+        <PipOverlay
+          isRunning={isRunning}
+          currentTask={currentTask}
+          timerDisplayTime={timerDisplayTime}
+          progress={progress}
+          dark={state.dark}
+          startTimer={startTimer}
+          pauseTimer={pauseTimer}
+        />
+      );
+    }
+    // Video PiP canvas (Android / iOS)
+    if (isPiPVideoActive && canvasRef.current) {
+      drawTimerCanvas();
+    }
   }); // no deps — re-renders alongside App to keep PiP in lockstep
 
   /* Persist (debounced) + cross-tab broadcast.
@@ -1250,6 +1259,63 @@ export default function App() {
         return { ...s, listStats: { ...s.listStats, [cl]: { ...prev, timeWorked: prev.timeWorked + accrued } } };
       });
     }
+  }
+
+  /* ---- Video PiP — canvas-based floating mini-player (Android / iOS) ---- */
+  function drawTimerCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const dark = stateRef.current.dark;
+
+    ctx.fillStyle = dark ? "#1e1e1e" : "#f0f0f0";
+    ctx.fillRect(0, 0, W, H);
+
+    // Progress bar
+    const pct = Math.min(Math.max(progress, 0), 100);
+    ctx.fillStyle = dark ? "#333" : "#ddd";
+    ctx.fillRect(0, 0, W, 5);
+    ctx.fillStyle = isRunning ? "#4caf50" : "#9e9e9e";
+    ctx.fillRect(0, 0, W * pct / 100, 5);
+
+    // Task name
+    const rawName = currentTask?.name ?? "";
+    const taskLabel = rawName.match(/^https?:\/\//) ? "Video task" : (rawName || "Ready");
+    ctx.fillStyle = dark ? "#9e9e9e" : "#757575";
+    ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    ctx.textBaseline = "top";
+    let label = taskLabel;
+    while (ctx.measureText(label + "…").width > W - 20 && label.length > 1) label = label.slice(0, -1);
+    ctx.fillText(label === taskLabel ? label : label + "…", 12, 14);
+
+    // Timer
+    ctx.fillStyle = dark ? "#e0e0e0" : "#212121";
+    ctx.font = "bold 46px 'Courier New', Courier, monospace";
+    ctx.textBaseline = "middle";
+    ctx.fillText(formatHMS(timerDisplayTime), 10, H / 2 + 12);
+  }
+
+  async function openVideoPiP() {
+    if (!document.pictureInPictureEnabled) return;
+    if (document.pictureInPictureElement) {
+      document.exitPictureInPicture().catch(() => {});
+      return;
+    }
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+    try {
+      if (!video.srcObject) {
+        video.srcObject = canvas.captureStream(4);
+        video.muted = true;
+        await video.play();
+      }
+      drawTimerCanvas();
+      await video.requestPictureInPicture();
+      setIsPiPVideoActive(true);
+      video.addEventListener("leavepictureinpicture", () => setIsPiPVideoActive(false), { once: true });
+    } catch { /* denied or unsupported */ }
   }
 
   /* ---- Media Session (Android/iOS lock-screen & notification controls) ---- */
@@ -2307,6 +2373,8 @@ export default function App() {
         restartList={restartTimer}
         openPiP={openPiP}
         isPiPActive={isPiPActive}
+        openVideoPiP={openVideoPiP}
+        isPiPVideoActive={isPiPVideoActive}
       />
 
       {/* Import / Export */}
@@ -2338,6 +2406,16 @@ export default function App() {
         </div>
       </div>
     </div>
+
+    {/* Hidden canvas + video used for Video PiP (Android / iOS) */}
+    <canvas ref={canvasRef} width={260} height={150}
+      style={{ position: "fixed", left: "-9999px", top: "-9999px", pointerEvents: "none" }}
+      aria-hidden="true"
+    />
+    <video ref={videoRef} muted playsInline
+      style={{ position: "fixed", left: "-9999px", top: "-9999px", width: 1, height: 1 }}
+      aria-hidden="true"
+    />
     </>
   );
 }

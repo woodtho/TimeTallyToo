@@ -33,6 +33,9 @@ function _isYouTubeUrl(value = "") {
 }
 
 const PIP_SUPPORTED = typeof window !== "undefined" && "documentPictureInPicture" in window;
+const PIP_VIDEO_SUPPORTED = typeof document !== "undefined" &&
+  document.pictureInPictureEnabled &&
+  !("documentPictureInPicture" in window);
 
 const TimerFooter = React.memo(function TimerFooter({
   config,
@@ -54,6 +57,8 @@ const TimerFooter = React.memo(function TimerFooter({
   restartList,
   openPiP,
   isPiPActive,
+  openVideoPiP,
+  isPiPVideoActive,
 }) {
   return (
     <div
@@ -112,6 +117,16 @@ const TimerFooter = React.memo(function TimerFooter({
             aria-label={isPiPActive ? "Close mini player" : "Open mini player"}
           >
             <i className={`fas fa-${isPiPActive ? "compress-alt" : "expand-alt"}`} />
+          </button>
+        )}
+        {PIP_VIDEO_SUPPORTED && (
+          <button
+            className={`btn-pip${isPiPVideoActive ? " btn-pip--active" : ""}`}
+            onClick={openVideoPiP}
+            title={isPiPVideoActive ? "Close mini player" : "Open mini player"}
+            aria-label={isPiPVideoActive ? "Close mini player" : "Open mini player"}
+          >
+            <i className={`fas fa-${isPiPVideoActive ? "compress-alt" : "expand-alt"}`} />
           </button>
         )}
       </div>
