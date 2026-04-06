@@ -416,9 +416,11 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Keep PiP overlays in sync with current timer state.
-     Fix: previously had no deps → React re-ran this effect on every render
-     (e.g. menu toggles, unrelated state). Now it only runs when values that
-     actually affect the PiP visual change. */
+     No deps array on purpose: currentTask / progress / timerDisplayTime are
+     all `const` declarations later in the component body, so referencing them
+     in a deps array here would hit the temporal dead zone and throw at render
+     time. Re-running on every App render is cheap (just a React render into
+     the PiP window + a 2D canvas paint) and keeps the PiP perfectly in sync. */
   useEffect(() => {
     // Document PiP (desktop Chrome)
     if (isPiPActive && pipRootRef.current) {
@@ -438,10 +440,7 @@ export default function App() {
     if (isPiPVideoActive && canvasRef.current) {
       drawTimerCanvas();
     }
-  }, [
-    isPiPActive, isPiPVideoActive,
-    isRunning, currentTask, timerDisplayTime, progress, state.dark,
-  ]);
+  });
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
