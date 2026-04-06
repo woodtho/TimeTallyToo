@@ -64,11 +64,12 @@ const defaultListStats = () => ({
   bestStreak: 0,        // all-time best consecutive days
 });
 
-// First-run example list — a classic Pomodoro focus session that doubles as a
-// "what is this app for?" demo. Only seeded for users with no existing
-// localStorage (loadState short-circuits to this when LS_KEY is missing).
-const EXAMPLE_LIST_NAME = "Focus Session";
-const exampleFocusSessionTasks = () => {
+// First-run example list — a structured workday with 5 deep-work blocks,
+// real breaks, lunch, admin time, and a shutdown ritual. Total: 6h 30m.
+// Only seeded for users with no existing localStorage (loadState short-circuits
+// to this when LS_KEY is missing).
+const EXAMPLE_LIST_NAME = "Workday";
+const exampleWorkdayTasks = () => {
   const mk = (name, secs) => ({
     id: crypto.randomUUID(),
     name,
@@ -78,17 +79,23 @@ const exampleFocusSessionTasks = () => {
     editing: false,
   });
   return [
-    mk("Plan today's wins",            3 * 60),
-    mk("Deep work — focus block 1",   25 * 60),
-    mk("Stretch & water",              5 * 60),
-    mk("Deep work — focus block 2",   25 * 60),
-    mk("Walk away & breathe",         10 * 60),
-    mk("Review & set tomorrow's goal", 5 * 60),
+    mk("Morning intention & plan today's wins",   10 * 60),
+    mk("Deep work — block 1",                     50 * 60),
+    mk("Stretch & water",                         10 * 60),
+    mk("Deep work — block 2",                     50 * 60),
+    mk("Coffee & email triage",                   20 * 60),
+    mk("Deep work — block 3",                     50 * 60),
+    mk("Lunch & walk away",                       45 * 60),
+    mk("Admin & messages",                        30 * 60),
+    mk("Deep work — block 4",                     50 * 60),
+    mk("Short break",                             10 * 60),
+    mk("Deep work — block 5",                     50 * 60),
+    mk("Shutdown ritual — review & plan tomorrow", 15 * 60),
   ];
 };
 
 const defaultState = () => ({
-  lists: { [EXAMPLE_LIST_NAME]: exampleFocusSessionTasks() },
+  lists: { [EXAMPLE_LIST_NAME]: exampleWorkdayTasks() },
   listOrder: [EXAMPLE_LIST_NAME],
   currentList: EXAMPLE_LIST_NAME,
   currentTaskIndex: 0,
@@ -97,8 +104,52 @@ const defaultState = () => ({
   dark: true,
   showHelp: false,
   showOptions: false,
-  isListCreating: false
+  isListCreating: false,
+  tutorialSeen: false,
 });
+
+// First-run tutorial steps. Plain content; no anchors needed because the
+// overlay is a centered/bottom-sheet card, not a per-element coachmark.
+// `highlight` keys map to a CSS rule that adds a glow ring to the matching
+// region of the app while that step is active.
+const TUTORIAL_STEPS = [
+  {
+    icon: "fa-rocket",
+    title: "Welcome to TimeTally",
+    body: "A tab-based timer for stacking focus sessions, breaks, study blocks — anything you can put on a list.",
+    highlight: null,
+  },
+  {
+    icon: "fa-list-check",
+    title: "Your Workday list",
+    body: "We loaded a structured 6.5-hour workday: 5 deep-work blocks, real breaks, lunch, admin time, and a shutdown ritual. Tap a task to make it active, drag to reorder, or use the menu to edit times.",
+    highlight: "tasks",
+  },
+  {
+    icon: "fa-folder-tree",
+    title: "Tabs are independent lists",
+    body: "Each tab has its own tasks, sounds, and TTS settings. Tap + to add a new list — try a workout, a study session, or a daily routine.",
+    highlight: "tabs",
+  },
+  {
+    icon: "fa-play",
+    title: "Timer controls",
+    body: "Start, pause, skip, complete early, or restart from the footer. Picture-in-Picture keeps the timer visible when you switch apps or lock your screen.",
+    highlight: "footer",
+  },
+  {
+    icon: "fa-chart-line",
+    title: "Stats & sharing",
+    body: "Tap the chart icon to see your sessions, streaks, and time worked. Hit Share on any list to get an Instagram-ready card.",
+    highlight: "stats",
+  },
+  {
+    icon: "fa-gear",
+    title: "Customize everything",
+    body: "Settings tunes beeps, TTS voices, dark mode, and more. Help has the full guide. You can reopen this tutorial from the Help page anytime.",
+    highlight: "header",
+  },
+];
 
 /* Tiny stat-card used only in the stats overlay */
 function SC({ icon, value, label, small }) {
@@ -215,6 +266,9 @@ function loadState() {
       ...parsed,
       listConfigs: mergedConfigs,
       listStats: mergedStats,
+      // Existing users never auto-see the tutorial — only true first-run users
+      // (the !raw branch above) start with tutorialSeen: false.
+      tutorialSeen: parsed.tutorialSeen ?? true,
     };
     // Run migrations so any old data with YT URLs but no meta still embeds,
     // and any tasks missing a stable id get one assigned.
@@ -241,6 +295,7 @@ function serializeState(state) {
     dark: state.dark,
     showHelp: state.showHelp,
     showOptions: state.showOptions,
+    tutorialSeen: state.tutorialSeen,
     // isListCreating intentionally omitted — always starts false
   });
 }
@@ -348,6 +403,10 @@ export default function App() {
   const [expandedLists, setExpandedLists] = useState({});
   // Share-card modal: { scope: "overall" | listName }
   const [shareTarget, setShareTarget] = useState(null);
+  // First-run tutorial — visibility is component-local, but `tutorialSeen`
+  // lives in persistent state. Initialized below in a one-shot mount effect.
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
   const shareCanvasRef = useRef(null);
   const [startPulse, setStartPulse] = useState(false);   // start-button ring animation
   const [newTaskId, setNewTaskId] = useState(null);       // slide-in for just-added task
@@ -501,6 +560,15 @@ export default function App() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, []); // empty deps — intentional; stateRef stays current via the effect above
+
+  /* First-run tutorial auto-open. Reads tutorialSeen from the loaded state once
+     on mount; no deps so it never re-fires after the user dismisses it. */
+  useEffect(() => {
+    if (!stateRef.current.tutorialSeen) {
+      setTutorialStep(0);
+      setShowTutorial(true);
+    }
+  }, []);
 
   /* Cross-tab synchronization: storage + BroadcastChannel */
   useEffect(() => {
@@ -1109,6 +1177,19 @@ export default function App() {
       }
       return next;
     });
+  }
+
+  /* Tutorial helpers — open/dismiss/replay. Dismissal flips the persistent
+     `tutorialSeen` flag so the auto-open effect won't re-fire on next load. */
+  function dismissTutorial() {
+    setShowTutorial(false);
+    if (!stateRef.current.tutorialSeen) {
+      patch((n) => { n.tutorialSeen = true; });
+    }
+  }
+  function replayTutorial() {
+    setTutorialStep(0);
+    setShowTutorial(true);
   }
 
   function ensureListConfig(name) {
@@ -2400,6 +2481,66 @@ export default function App() {
       </div>
     )}
 
+    {/* First-run tutorial — auto-opens on first load, replayable from Help */}
+    {showTutorial && (
+      <div
+        className={`tutorial-overlay${state.dark ? " dark-mode" : ""}`}
+        data-tut-step={TUTORIAL_STEPS[tutorialStep]?.highlight || ""}
+        onClick={(e) => { if (e.target === e.currentTarget) dismissTutorial(); }}
+      >
+        <div className="tutorial-card" role="dialog" aria-modal="true" aria-label="Tutorial">
+          <div className="tutorial-header">
+            <span className="tutorial-step-counter">
+              Step {tutorialStep + 1} of {TUTORIAL_STEPS.length}
+            </span>
+            <button className="tutorial-skip" onClick={dismissTutorial}>
+              Skip
+            </button>
+          </div>
+          <div className="tutorial-body">
+            <i className={`fas ${TUTORIAL_STEPS[tutorialStep].icon} tutorial-icon`} />
+            <h3 className="tutorial-title">{TUTORIAL_STEPS[tutorialStep].title}</h3>
+            <p className="tutorial-text">{TUTORIAL_STEPS[tutorialStep].body}</p>
+          </div>
+          <div className="tutorial-progress">
+            {TUTORIAL_STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={`tutorial-dot${i === tutorialStep ? " active" : ""}`}
+              />
+            ))}
+          </div>
+          <div className="tutorial-actions">
+            <button
+              className="tutorial-btn tutorial-btn--secondary"
+              onClick={() => setTutorialStep((s) => Math.max(0, s - 1))}
+              disabled={tutorialStep === 0}
+            >
+              <i className="fas fa-arrow-left" />
+              <span>Back</span>
+            </button>
+            {tutorialStep < TUTORIAL_STEPS.length - 1 ? (
+              <button
+                className="tutorial-btn tutorial-btn--primary"
+                onClick={() => setTutorialStep((s) => Math.min(TUTORIAL_STEPS.length - 1, s + 1))}
+              >
+                <span>Next</span>
+                <i className="fas fa-arrow-right" />
+              </button>
+            ) : (
+              <button
+                className="tutorial-btn tutorial-btn--primary"
+                onClick={dismissTutorial}
+              >
+                <i className="fas fa-check" />
+                <span>Get started</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
     {/* Help full-screen overlay */}
     {state.showHelp && (
       <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
@@ -2414,6 +2555,17 @@ export default function App() {
           </button>
         </div>
         <div className="options-overlay-body help-overlay-body">
+          <button
+            type="button"
+            className="help-replay-tutorial"
+            onClick={() => {
+              patch((n) => { n.showHelp = false; });
+              replayTutorial();
+            }}
+          >
+            <i className="fas fa-rocket" />
+            <span>Replay tutorial</span>
+          </button>
           <div className="help-card-overlay">
             <h3><i className="fas fa-circle-play" /> Getting started</h3>
             <ul className="help-list">

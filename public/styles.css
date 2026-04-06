@@ -2878,3 +2878,275 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
     animation: savePulse 0.25s ease both;
   }
 }
+
+/* ===================================================
+   First-run tutorial — modal card + highlight ring
+   Sits above all other overlays (z-index 2100, just under io-toast 2000?
+   actually above it so the tutorial is uninterruptable). Tokens cloned from
+   .share-modal-backdrop / .data-action-btn for visual consistency.
+   =================================================== */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2100;
+  padding: 16px;
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  animation: tutorialBackdropIn 0.22s ease-out;
+}
+@keyframes tutorialBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.tutorial-card {
+  background: #fff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 22px 20px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  animation: tutorialCardIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tutorial-overlay.dark-mode .tutorial-card {
+  background: #1e1e1e;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7);
+}
+@keyframes tutorialCardIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tutorial-step-counter {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #2196f3;
+}
+.tutorial-overlay.dark-mode .tutorial-step-counter {
+  color: #90caf9;
+}
+.tutorial-skip {
+  background: transparent;
+  border: none;
+  color: #777;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tutorial-skip:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #222;
+}
+.tutorial-overlay.dark-mode .tutorial-skip { color: #aaa; }
+.tutorial-overlay.dark-mode .tutorial-skip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.tutorial-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 6px 4px 4px;
+}
+.tutorial-icon {
+  font-size: 42px;
+  color: #2196f3;
+  background: linear-gradient(145deg, #e3f2fd 0%, #ede7f6 100%);
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.25);
+}
+.tutorial-overlay.dark-mode .tutorial-icon {
+  color: #90caf9;
+  background: linear-gradient(145deg, #1a2535 0%, #231a35 100%);
+  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.35);
+}
+.tutorial-title {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #222;
+  line-height: 1.25;
+}
+.tutorial-overlay.dark-mode .tutorial-title { color: #f0f0f0; }
+.tutorial-text {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #555;
+}
+.tutorial-overlay.dark-mode .tutorial-text { color: #b8b8b8; }
+
+.tutorial-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d0d0d0;
+  transition: background 0.2s, transform 0.2s;
+}
+.tutorial-dot.active {
+  background: #2196f3;
+  transform: scale(1.3);
+}
+.tutorial-overlay.dark-mode .tutorial-dot { background: #444; }
+.tutorial-overlay.dark-mode .tutorial-dot.active { background: #90caf9; }
+
+.tutorial-actions {
+  display: flex;
+  gap: 10px;
+}
+.tutorial-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s, opacity 0.15s;
+}
+.tutorial-btn:active { transform: scale(0.985); }
+.tutorial-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.tutorial-btn--primary {
+  background: #2196f3;
+  color: #fff;
+}
+.tutorial-btn--primary:hover:not(:disabled) {
+  background: #1976d2;
+}
+.tutorial-overlay.dark-mode .tutorial-btn--primary { background: #1976d2; }
+.tutorial-overlay.dark-mode .tutorial-btn--primary:hover:not(:disabled) {
+  background: #1565c0;
+}
+.tutorial-btn--secondary {
+  background: transparent;
+  color: #2196f3;
+  border: 1.5px solid #2196f3;
+}
+.tutorial-btn--secondary:hover:not(:disabled) {
+  background: rgba(33, 150, 243, 0.08);
+}
+.tutorial-overlay.dark-mode .tutorial-btn--secondary {
+  color: #90caf9;
+  border-color: #90caf9;
+}
+.tutorial-overlay.dark-mode .tutorial-btn--secondary:hover:not(:disabled) {
+  background: rgba(144, 202, 249, 0.10);
+}
+
+/* Bottom-sheet variant on phones — easier to reach with thumb */
+@media (max-width: 600px) {
+  .tutorial-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .tutorial-card {
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+    animation: tutorialSheetIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes tutorialSheetIn {
+    from { opacity: 0; transform: translateY(60px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .tutorial-icon {
+    width: 72px;
+    height: 72px;
+    font-size: 36px;
+  }
+}
+
+/* Highlight ring — uses :has() to glow the relevant region while a step
+   that points at it is active. Falls back gracefully on browsers without
+   :has() (no glow, but the modal copy still teaches the user). */
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.85), 0 0 22px rgba(33, 150, 243, 0.55); }
+  50%      { box-shadow: 0 0 0 3px rgba(33, 150, 243, 1.00), 0 0 32px rgba(33, 150, 243, 0.85); }
+}
+body:has(.tutorial-overlay[data-tut-step="tabs"]) .tabs-container,
+body:has(.tutorial-overlay[data-tut-step="tasks"]) #taskList,
+body:has(.tutorial-overlay[data-tut-step="footer"]) .controls-footer,
+body:has(.tutorial-overlay[data-tut-step="header"]) .header-buttons {
+  border-radius: 10px;
+  animation: tutorialPulse 1.6s ease-in-out infinite;
+  position: relative;
+  z-index: 2099;
+}
+body:has(.tutorial-overlay[data-tut-step="stats"]) .stats-button {
+  border-radius: 50%;
+  animation: tutorialPulse 1.6s ease-in-out infinite;
+  position: relative;
+  z-index: 2099;
+}
+
+/* Replay-tutorial button at the top of the Help overlay body */
+.help-replay-tutorial {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  background: linear-gradient(145deg, #e3f2fd 0%, #ede7f6 100%);
+  color: #1565c0;
+  border: 1.5px solid rgba(33, 150, 243, 0.35);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+}
+.help-replay-tutorial:hover {
+  background: linear-gradient(145deg, #d7eaff 0%, #e1d6f4 100%);
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.25);
+}
+.help-replay-tutorial:active { transform: scale(0.98); }
+.help-replay-tutorial i { font-size: 14px; }
+.options-overlay.dark-mode .help-replay-tutorial {
+  background: linear-gradient(145deg, #1a2535 0%, #231a35 100%);
+  color: #90caf9;
+  border-color: rgba(144, 202, 249, 0.35);
+}
+.options-overlay.dark-mode .help-replay-tutorial:hover {
+  background: linear-gradient(145deg, #21304a 0%, #2c2147 100%);
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.35);
+}
