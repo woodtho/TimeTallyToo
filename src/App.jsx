@@ -1306,13 +1306,15 @@ export default function App() {
     const video = videoRef.current;
     if (!canvas || !video) return;
     try {
-      // Always recreate the stream — avoids reusing a dead/ended track
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach((t) => t.stop());
+      // Reuse the existing stream if its tracks are still live — repeatedly
+      // stopping and recreating the stream corrupts the video element's internal
+      // state after a few cycles. Only create a new one if necessary.
+      const hasLiveTrack = video.srcObject?.getTracks().some((t) => t.readyState === "live");
+      if (!hasLiveTrack) {
+        video.srcObject = canvas.captureStream(4);
+        video.muted = true;
       }
-      video.srcObject = canvas.captureStream(4);
-      video.muted = true;
-      await video.play();
+      if (video.paused) await video.play();
       drawTimerCanvas();
       await video.requestPictureInPicture();
       setIsPiPVideoActive(true);
@@ -2420,8 +2422,10 @@ export default function App() {
       playsInline
       onPause={(e) => {
         // When the screen locks the browser pauses the video, which would close PiP.
-        // Immediately resume so the PiP window stays open.
-        if (document.pictureInPictureElement === e.target) {
+        // Only resume if the stream tracks are still live — avoids a fight with
+        // openVideoPiP on the rare path where the stream genuinely needs replacing.
+        const hasLiveTrack = e.target.srcObject?.getTracks().some((t) => t.readyState === "live");
+        if (hasLiveTrack && document.pictureInPictureElement === e.target) {
           e.target.play().catch(() => {});
         }
       }}
