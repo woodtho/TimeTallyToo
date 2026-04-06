@@ -355,6 +355,7 @@ export default function App() {
   const pipWindowRef = useRef(null);  // Document PiP window reference
   const pipRootRef = useRef(null);    // React root rendered inside the PiP window
   const [isPiPActive, setIsPiPActive] = useState(false);
+  const silentAudioRef = useRef(null); // keeps MediaSession alive on mobile
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -1138,6 +1139,17 @@ export default function App() {
           pauseAllYouTube();
           playYouTubeIfAny(fx.idx);
           announceStart(fx.task);
+          // Update lock-screen / notification title for the new task
+          if ("mediaSession" in navigator) {
+            try {
+              const cl = stateRef.current.currentList;
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: fx.task?.name && !fx.task.name.match(/^https?:\/\//) ? fx.task.name : "Timer running",
+                artist: cl === "default" ? "TimeTallyToo" : cl,
+                album: "TimeTallyToo",
+              });
+            } catch { /* ignore */ }
+          }
         } else if (fx.type === "advance") {
           pauseAllYouTube();
         }
@@ -1148,6 +1160,7 @@ export default function App() {
         timerRef.current = null;
         pauseAllYouTube();
         setIsRunning(false);
+        deactivateMediaSession();
         // Show celebration only when the list completed naturally (at least one task
         // completed and no "advance" side-effect, which would mean autoAdvance=false
         // paused mid-list rather than the whole list finishing).
@@ -1216,6 +1229,7 @@ export default function App() {
     pauseAllYouTube();
     playYouTubeIfAny(startIndex);
     _startInterval();
+    activateMediaSession(arr[startIndex]);
   }
 
   function pauseTimer() {
@@ -1225,6 +1239,7 @@ export default function App() {
     setIsRunning(false);
     pauseCurrentYouTube();
     pauseAllYouTube(); // belt-and-suspenders
+    deactivateMediaSession();
     // Commit accrued time on pause
     if (sessionAccrualRef.current > 0) {
       const accrued = sessionAccrualRef.current;
@@ -1235,6 +1250,51 @@ export default function App() {
         return { ...s, listStats: { ...s.listStats, [cl]: { ...prev, timeWorked: prev.timeWorked + accrued } } };
       });
     }
+  }
+
+  /* ---- Media Session (Android/iOS lock-screen & notification controls) ---- */
+  function _getSilentAudio() {
+    if (silentAudioRef.current) return silentAudioRef.current;
+    // Minimal 1-sample looping WAV to keep the MediaSession notification alive
+    const buf = new ArrayBuffer(46);
+    const v = new DataView(buf);
+    const s = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    s(0,"RIFF"); v.setUint32(4,38,true); s(8,"WAVE"); s(12,"fmt ");
+    v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,8000,true); v.setUint32(28,16000,true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true);
+    s(36,"data"); v.setUint32(40,2,true); v.setInt16(44,0,true);
+    const url = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = 0.001; // near-silent; 0 gets suspended on some browsers
+    silentAudioRef.current = audio;
+    return audio;
+  }
+
+  function activateMediaSession(task) {
+    if (!("mediaSession" in navigator)) return;
+    try {
+      _getSilentAudio().play().catch(() => {});
+      const cl = stateRef.current.currentList;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: task?.name && !task.name.match(/^https?:\/\//) ? task.name : "Timer running",
+        artist: cl === "default" ? "TimeTallyToo" : cl,
+        album: "TimeTallyToo",
+      });
+      navigator.mediaSession.playbackState = "playing";
+      navigator.mediaSession.setActionHandler("play", () => startTimer());
+      navigator.mediaSession.setActionHandler("pause", () => pauseTimer());
+      navigator.mediaSession.setActionHandler("nexttrack", () => skipTask());
+    } catch { /* MediaSession not available in this context */ }
+  }
+
+  function deactivateMediaSession() {
+    if (!("mediaSession" in navigator)) return;
+    try {
+      silentAudioRef.current?.pause();
+      navigator.mediaSession.playbackState = "paused";
+    } catch { /* ignore */ }
   }
 
   async function openPiP() {
