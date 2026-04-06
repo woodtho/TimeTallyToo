@@ -1,7 +1,7 @@
 {
   "name": "timetallytoo",
   "private": true,
-  "version": "0.2.32",
+  "version": "0.2.33",
   "homepage": "https://woodtho.github.io/TimeTallyToo/",
   "type": "module",
   "scripts": {

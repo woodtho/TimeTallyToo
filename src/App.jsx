@@ -365,6 +365,7 @@ export default function App() {
   const silentAudioRef = useRef(null); // keeps MediaSession alive on mobile
   const wakeLockRef = useRef(null);    // Screen Wake Lock — prevents auto-lock while timer runs
   const ytHeartbeatRef = useRef(null); // interval that keeps YouTube iframe playing under lock
+  const easterTapsRef = useRef({ count: 0, last: 0 }); // hidden tap counter on stats hero
   const pipDesiredPlayingRef = useRef(false); // true while the PiP canvas video should be playing
   const [pipError, setPipError] = useState(null); // user-visible PiP error toast
 
@@ -1035,6 +1036,57 @@ export default function App() {
     fn(next);
     return next;
   });
+
+  // Hidden easter egg: 10 quick taps on the Sessions hero number injects a
+  // plausible-looking set of fake stats across every list. No UI feedback —
+  // intentional, so casual users never notice the surface. Used for screenshots
+  // and the share-card preview.
+  function _onSessionEasterTap() {
+    const now = Date.now();
+    const ref = easterTapsRef.current;
+    if (now - ref.last > 4000) ref.count = 0;
+    ref.last = now;
+    ref.count += 1;
+    if (ref.count >= 10) {
+      ref.count = 0;
+      _injectFakeStats();
+    }
+  }
+
+  function _injectFakeStats() {
+    setState((s) => {
+      const next = { ...s, listStats: { ...s.listStats } };
+      const todayMs = Date.now();
+      const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+      for (const name of s.listOrder) {
+        const sessions = rand(12, 80);
+        const avgSec = rand(600, 2400);
+        const timeWorked = sessions * avgSec;
+        const longest = avgSec + rand(300, 3600);
+        const tasks = sessions * rand(3, 9);
+        const skipped = rand(0, Math.max(1, Math.floor(tasks / 12)));
+        const bestStreak = rand(4, 26);
+        const currentStreak = rand(0, Math.min(bestStreak, 9));
+        const firstDaysAgo = rand(45, 365);
+        const lastDaysAgo = rand(0, 3);
+        const first = new Date(todayMs - firstDaysAgo * 86400000);
+        const last = new Date(todayMs - lastDaysAgo * 86400000);
+        next.listStats[name] = {
+          tasksCompleted: tasks,
+          timeWorked,
+          sessionsCompleted: sessions,
+          tasksSkipped: skipped,
+          lastSession: last.toISOString(),
+          firstSession: first.toISOString(),
+          lastSessionDate: last.toISOString().slice(0, 10),
+          longestSession: longest,
+          currentStreak,
+          bestStreak,
+        };
+      }
+      return next;
+    });
+  }
 
   function ensureListConfig(name) {
     if (!state.listConfigs[name]) {
@@ -2193,7 +2245,7 @@ export default function App() {
                 <span className="stat-hero-value">{formatTimeWorked(allStats.timeWorked)}</span>
                 <span className="stat-hero-label">Time worked</span>
               </div>
-              <div className="stat-hero-item">
+              <div className="stat-hero-item" onClick={_onSessionEasterTap}>
                 <span className="stat-hero-value">{allStats.sessionsCompleted}</span>
                 <span className="stat-hero-label">Sessions</span>
               </div>
