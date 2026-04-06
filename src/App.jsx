@@ -360,6 +360,9 @@ export default function App() {
   const [isPiPVideoActive, setIsPiPVideoActive] = useState(false);
   const silentAudioRef = useRef(null); // keeps MediaSession alive on mobile
   const wakeLockRef = useRef(null);    // Screen Wake Lock — prevents auto-lock while timer runs
+  const ytHeartbeatRef = useRef(null); // interval that keeps YouTube iframe playing under lock
+  const pipDesiredPlayingRef = useRef(false); // true while the PiP canvas video should be playing
+  const [pipError, setPipError] = useState(null); // user-visible PiP error toast
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -387,34 +390,35 @@ export default function App() {
   useEffect(() => { voicesRef.current = voices; }, [voices]);
 
   /* Keep YouTube in sync with page visibility (screen lock / app switch).
-     - On show: resume YouTube and re-acquire wake lock (system releases it while hidden).
-     - On hide: no-op — wake lock keeps the screen from locking while timer runs,
-       so document.hidden should never become true during an active session.
-       The 650 ms retry is kept as a safety net for when wake lock is unavailable. */
+     Reality: Wake Lock API only prevents auto-lock while visible — it does NOT keep
+     the page visible after the user manually locks the screen. So YouTube's iframe
+     will see visibilitychange and auto-pause itself whenever the screen locks.
+     Our mitigation is a heartbeat (see startYouTubeHeartbeat) that keeps firing
+     playVideo postMessage every 2s while the timer is running; postMessage still
+     reaches the cross-origin iframe even when the owning page is hidden.
+
+     Additionally, Video PiP keeps the document "visible" from YouTube's perspective
+     on Android Chrome (the spec requires the page stay active to drive PiP content),
+     so opening PiP before locking the screen is the most reliable listen-on-lock path. */
   useEffect(() => {
-    let hideTimer = null;
     function onVisibility() {
-      clearTimeout(hideTimer);
       if (!timerRef.current) return;
-      if (document.hidden) {
-        // Fallback: wake lock unavailable/denied — try to resume YouTube after its auto-pause
-        hideTimer = setTimeout(() => {
-          if (timerRef.current) playYouTubeIfAny(stateRef.current.currentTaskIndex);
-        }, 650);
-      } else {
-        // Page visible again — re-acquire wake lock (system released it) and resume YouTube
+      if (!document.hidden) {
+        // Page became visible again — re-acquire wake lock and kick YouTube.
         requestWakeLock();
         playYouTubeIfAny(stateRef.current.currentTaskIndex);
       }
+      // When page becomes hidden, we do nothing here — the heartbeat interval
+      // continues to run in the background and repeatedly nudges the iframe.
     }
     document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      clearTimeout(hideTimer);
-    };
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Keep PiP overlays in sync with current timer state */
+  /* Keep PiP overlays in sync with current timer state.
+     Fix: previously had no deps → React re-ran this effect on every render
+     (e.g. menu toggles, unrelated state). Now it only runs when values that
+     actually affect the PiP visual change. */
   useEffect(() => {
     // Document PiP (desktop Chrome)
     if (isPiPActive && pipRootRef.current) {
@@ -434,7 +438,10 @@ export default function App() {
     if (isPiPVideoActive && canvasRef.current) {
       drawTimerCanvas();
     }
-  }); // no deps — re-renders alongside App to keep PiP in lockstep
+  }, [
+    isPiPActive, isPiPVideoActive,
+    isRunning, currentTask, timerDisplayTime, progress, state.dark,
+  ]);
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -521,6 +528,8 @@ export default function App() {
       clearTimeout(saveTimerRef.current);
       clearTimeout(affirmationTimerRef.current);
       clearTimeout(listCompleteTimerRef.current);
+      stopYouTubeHeartbeat();
+      releaseWakeLock();
       // Fix #8: close AudioContext so the browser slot is freed immediately
       try { audioCtxRef.current?.close(); } catch { /* ignore */ }
       audioCtxRef.current = null;
@@ -1070,6 +1079,33 @@ export default function App() {
     postToYouTubeIframe(iframe, "playVideo");
   }
 
+  /* Heartbeat: repeatedly re-issue playVideo to the current YouTube iframe.
+     Why this exists: YouTube's iframe has its own visibilitychange listener
+     (cross-origin — we can't suppress it) that auto-pauses playback when
+     document.hidden becomes true (i.e. screen lock / app switch on mobile).
+     The Screen Wake Lock API does NOT prevent this — it only prevents the
+     OS auto-lock while the page is visible. So to achieve "listen on lock",
+     we spam playVideo at a steady cadence. postMessage still crosses origins
+     even while the owner document is hidden; YouTube responds and resumes.
+     Idempotent when already playing, so the overhead is trivial. */
+  function startYouTubeHeartbeat() {
+    stopYouTubeHeartbeat();
+    ytHeartbeatRef.current = setInterval(() => {
+      if (!timerRef.current) return; // stop nudging once the timer is paused
+      const s = stateRef.current;
+      const task = (s.lists[s.currentList] || [])[s.currentTaskIndex];
+      if (!task || !isYouTubeUrl(task.name)) return;
+      playYouTubeIfAny(s.currentTaskIndex);
+    }, 2000);
+  }
+
+  function stopYouTubeHeartbeat() {
+    if (ytHeartbeatRef.current) {
+      clearInterval(ytHeartbeatRef.current);
+      ytHeartbeatRef.current = null;
+    }
+  }
+
   function announceStart(task) {
     const cfg = configRef.current;
     const dur = ttsDuration(task.remaining);
@@ -1196,7 +1232,9 @@ export default function App() {
       if (timerEnded) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+        pipDesiredPlayingRef.current = false;
         pauseAllYouTube();
+        stopYouTubeHeartbeat();
         setIsRunning(false);
         releaseWakeLock();
         deactivateMediaSession();
@@ -1269,8 +1307,10 @@ export default function App() {
     playYouTubeIfAny(startIndex);
     _startInterval();
     requestWakeLock();
+    startYouTubeHeartbeat();
     activateMediaSession(arr[startIndex]);
     // Resume canvas video if PiP is already open (e.g. user paused then resumed)
+    pipDesiredPlayingRef.current = true;
     if (videoRef.current && document.pictureInPictureElement === videoRef.current && videoRef.current.paused) {
       videoRef.current.play().catch(() => {});
     }
@@ -1280,9 +1320,11 @@ export default function App() {
     if (!timerRef.current) return;
     clearInterval(timerRef.current);
     timerRef.current = null; // null BEFORE pausing video so onPause guard sees timer is stopped
+    pipDesiredPlayingRef.current = false;
     setIsRunning(false);
     pauseCurrentYouTube();
     pauseAllYouTube(); // belt-and-suspenders
+    stopYouTubeHeartbeat();
     releaseWakeLock();
     deactivateMediaSession();
     // Pause canvas video so PiP shows the correct paused state
@@ -1301,7 +1343,11 @@ export default function App() {
     }
   }
 
-  /* ---- Video PiP — canvas-based floating mini-player (Android / iOS) ---- */
+  /* ---- Video PiP — canvas-based floating mini-player (Android / iOS) ----
+     Rendered at 320×180 (16:9); browsers scale up for crispness.  Palette mirrors
+     public/styles.css exactly: .progress-bar (#4caf50 light / #76c7c0 dark),
+     .timer-remaining (#2196f3 light / #90caf9 dark), .timer-task-name (#333/#eee),
+     and .timer-section background (#fafafa/#2a2a2a). */
   function drawTimerCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1309,88 +1355,113 @@ export default function App() {
     const W = canvas.width, H = canvas.height;
     const dark = stateRef.current.dark;
 
-    // Palette — exact values from the main app's CSS
-    const bg          = dark ? "#1e1e1e" : "#fafafa";
-    const sectionBg   = dark ? "#2a2a2a" : "#ffffff";
+    // Design tokens copied from public/styles.css
+    const bg          = dark ? "#1e1e1e" : "#f5f5f5";      // .controls-footer
+    const sectionBg   = dark ? "#2a2a2a" : "#fafafa";      // .timer-section
     const borderColor = dark ? "#444"    : "#ccc";
-    const trackColor  = dark ? "#333"    : "#ddd";
-    const barRunning  = dark ? "#76c7c0" : "#4caf50"; // matches .progress-bar colors
+    const trackColor  = dark ? "#333"    : "#ddd";         // .progress-container
+    const barRunning  = dark ? "#76c7c0" : "#4caf50";      // .progress-bar
     const barPaused   = dark ? "#555"    : "#bbb";
-    const timerColor  = dark ? "#90caf9" : "#2196f3"; // matches .timer-remaining
-    const labelColor  = dark ? "#eee"    : "#333";    // matches .timer-task-name
-    const subtleColor = dark ? "#777"    : "#888";
+    const timerColor  = dark ? "#90caf9" : "#2196f3";      // .timer-remaining
+    const labelColor  = dark ? "#eee"    : "#333";         // .timer-task-name
+    const subtleColor = dark ? "#999"    : "#777";
     const ytColor     = dark ? "#ff5252" : "#c62828";
 
-    // Background
+    // Outer background
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Inner card
-    const PAD = 8;
+    // Card with drop shadow to echo the main app's floating footer
+    const PAD = 10;
+    const cardX = PAD, cardY = PAD, cardW = W - PAD * 2, cardH = H - PAD * 2;
+    ctx.save();
+    ctx.shadowColor = dark ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.18)";
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 3;
     ctx.fillStyle = sectionBg;
     ctx.beginPath();
-    ctx.roundRect(PAD, PAD, W - PAD * 2, H - PAD * 2, 8);
+    ctx.roundRect(cardX, cardY, cardW, cardH, 10);
     ctx.fill();
+    ctx.restore();
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(cardX + 0.5, cardY + 0.5, cardW - 1, cardH - 1, 10);
     ctx.stroke();
 
-    // Progress bar (10px, rounded, clipped inside card)
-    const BAR_Y = PAD + 1, BAR_H = 10;
+    // Progress bar — 12px high, rounded, pinned to top of card, clipped inside corners
+    const BAR_X = cardX + 12;
+    const BAR_Y = cardY + 14;
+    const BAR_W = cardW - 24;
+    const BAR_H = 6;
     const pct = Math.min(Math.max(progress, 0), 100) / 100;
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(PAD, BAR_Y, W - PAD * 2, BAR_H, [8, 8, 0, 0]);
+    ctx.roundRect(BAR_X, BAR_Y, BAR_W, BAR_H, 3);
     ctx.clip();
     ctx.fillStyle = trackColor;
-    ctx.fillRect(PAD, BAR_Y, W - PAD * 2, BAR_H);
+    ctx.fillRect(BAR_X, BAR_Y, BAR_W, BAR_H);
     ctx.fillStyle = isRunning ? barRunning : barPaused;
-    ctx.fillRect(PAD, BAR_Y, (W - PAD * 2) * pct, BAR_H);
+    ctx.fillRect(BAR_X, BAR_Y, BAR_W * pct, BAR_H);
     ctx.restore();
 
-    // Task name (13px bold — matches .timer-task-name)
+    // Task name row (bold 13px — matches .timer-task-name)
     const rawName = currentTask?.name ?? "";
     const isYT = !!rawName.match(/^https?:\/\//);
-    ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    const TEXT_X = cardX + 14;
+    const TASK_Y = BAR_Y + BAR_H + 10;
+    ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     ctx.textBaseline = "top";
     if (isYT) {
-      // Red YouTube pill badge
       const badge = "▶ YouTube";
-      const bw = ctx.measureText(badge).width + 12;
+      const metrics = ctx.measureText(badge);
+      const bw = metrics.width + 14;
       ctx.fillStyle = ytColor;
       ctx.beginPath();
-      ctx.roundRect(PAD + 6, BAR_Y + BAR_H + 6, bw, 17, 4);
+      ctx.roundRect(TEXT_X, TASK_Y, bw, 20, 10);
       ctx.fill();
       ctx.fillStyle = "#fff";
-      ctx.fillText(badge, PAD + 12, BAR_Y + BAR_H + 8);
+      ctx.fillText(badge, TEXT_X + 7, TASK_Y + 4);
     } else {
-      const taskLabel = rawName || "Ready";
       ctx.fillStyle = labelColor;
-      let label = taskLabel;
-      const maxW = W - PAD * 2 - 14;
+      let label = rawName || "Ready";
+      const maxW = cardW - 28;
       while (label.length > 1 && ctx.measureText(label + "…").width > maxW) label = label.slice(0, -1);
-      ctx.fillText(label === taskLabel ? label : label + "…", PAD + 7, BAR_Y + BAR_H + 7);
+      ctx.fillText(label === (rawName || "Ready") ? label : label + "…", TEXT_X, TASK_Y + 2);
     }
 
-    // Timer — 'Courier New' monospace, blue, matches .timer-remaining
+    // Timer readout — 'Courier New' monospace; size scales with card height
     const timerStr = formatHMS(timerDisplayTime);
-    ctx.font = "bold 44px 'Courier New', Courier, monospace";
+    const TIMER_FONT_PX = Math.min(52, Math.round(cardH * 0.42));
+    ctx.font = `bold ${TIMER_FONT_PX}px 'Courier New', Courier, monospace`;
     ctx.fillStyle = isRunning ? timerColor : subtleColor;
     ctx.textBaseline = "middle";
-    ctx.fillText(timerStr, PAD + 6, H / 2 + 10);
+    // Right-align vertically, with a little optical offset downwards
+    const TIMER_Y = cardY + cardH * 0.62;
+    ctx.fillText(timerStr, TEXT_X, TIMER_Y);
 
-    // Paused label (bottom-right)
+    // Percent label (bottom-right, mirrors .timer-percent)
+    ctx.font = "600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.fillStyle = subtleColor;
+    ctx.textBaseline = "alphabetic";
+    const pctStr = `${Math.round(progress)}%`;
+    const pctW = ctx.measureText(pctStr).width;
+    ctx.fillText(pctStr, cardX + cardW - pctW - 14, cardY + cardH - 14);
+
+    // Paused chip (bottom-left)
     if (!isRunning) {
-      ctx.font = "11px -apple-system, sans-serif";
+      ctx.font = "600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
       ctx.fillStyle = subtleColor;
       ctx.textBaseline = "alphabetic";
-      const pausedW = ctx.measureText("⏸ Paused").width;
-      ctx.fillText("⏸ Paused", W - PAD - pausedW - 6, H - PAD - 8);
+      ctx.fillText("⏸ Paused", cardX + 14, cardY + cardH - 14);
     }
   }
 
   async function openVideoPiP() {
-    if (!document.pictureInPictureEnabled) return;
+    if (!document.pictureInPictureEnabled) {
+      showPipError("Picture-in-picture is not available on this browser.");
+      return;
+    }
     if (document.pictureInPictureElement) {
       document.exitPictureInPicture().catch(() => {});
       return;
@@ -1398,18 +1469,29 @@ export default function App() {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
+
+    // Draw the first frame BEFORE capturing the stream, otherwise some browsers
+    // hand us a stream whose first frame is blank and PiP shows a black flash.
+    drawTimerCanvas();
+
     try {
-      // Reuse the existing stream if its tracks are still live
-      const hasLiveTrack = video.srcObject?.getTracks().some((t) => t.readyState === "live");
-      if (!hasLiveTrack) {
+      // Always refresh the srcObject when any existing track has ended. The
+      // previous "reuse if any live" check could keep a half-dead stream.
+      const tracks = video.srcObject?.getTracks?.() || [];
+      const allLive = tracks.length > 0 && tracks.every((t) => t.readyState === "live");
+      if (!allLive) {
+        // Stop any stale tracks before replacing so the GC can reclaim them.
+        tracks.forEach((t) => { try { t.stop(); } catch { /* ignore */ } });
         video.srcObject = canvas.captureStream(4);
         video.muted = true;
       }
       if (video.paused) await video.play();
-      drawTimerCanvas();
       await video.requestPictureInPicture();
       setIsPiPVideoActive(true);
-      video.addEventListener("leavepictureinpicture", () => setIsPiPVideoActive(false), { once: true });
+      video.addEventListener("leavepictureinpicture", () => {
+        setIsPiPVideoActive(false);
+        pipDesiredPlayingRef.current = false;
+      }, { once: true });
 
       // Register Media Session handlers now so the PiP play/pause button
       // works even before the timer has been started for the first time.
@@ -1421,15 +1503,32 @@ export default function App() {
         } catch { /* ignore */ }
       }
 
-      // If the timer isn't running, pause the canvas video so the PiP
-      // shows a ▶ (play) button rather than a ⏸ (pause) button.
+      // Reflect current timer state in the PiP control (play vs pause button).
+      pipDesiredPlayingRef.current = !!timerRef.current;
       if (!timerRef.current) {
         video.pause();
       }
-    } catch { /* denied or unsupported */ }
+    } catch (err) {
+      // Common reasons: user gesture requirement, iOS restrictions, or hardware denial.
+      const msg = err?.name === "NotAllowedError"
+        ? "Picture-in-picture was blocked. Try tapping the button again."
+        : "Couldn't open the mini player on this device.";
+      showPipError(msg);
+    }
   }
 
-  /* ---- Screen Wake Lock — keep screen on so YouTube iframe never sees document.hidden ---- */
+  function showPipError(msg) {
+    setPipError(msg);
+    setTimeout(() => setPipError((cur) => (cur === msg ? null : cur)), 3200);
+  }
+
+  /* ---- Screen Wake Lock ----
+     Prevents the OS *auto*-lock while the user is running a timer (so an
+     unattended task doesn't dim mid-session). Does NOT prevent a manual
+     power-button lock, and is auto-released by the browser whenever the
+     page is backgrounded — so this is a convenience, not the mechanism
+     that keeps YouTube audio playing under lock. That job belongs to the
+     heartbeat in startYouTubeHeartbeat(). */
   async function requestWakeLock() {
     if (!("wakeLock" in navigator)) return;
     try {
@@ -1499,14 +1598,17 @@ export default function App() {
   }
 
   async function openPiP() {
-    if (!("documentPictureInPicture" in window)) return;
+    if (!("documentPictureInPicture" in window)) {
+      showPipError("Mini player is not supported in this browser.");
+      return;
+    }
     // Toggle: close if already open
     if (pipWindowRef.current) {
       pipWindowRef.current.close();
       return;
     }
     try {
-      const pipWin = await window.documentPictureInPicture.requestWindow({ width: 240, height: 210 });
+      const pipWin = await window.documentPictureInPicture.requestWindow({ width: 260, height: 220 });
       pipWindowRef.current = pipWin;
       setIsPiPActive(true);
 
@@ -1517,17 +1619,21 @@ export default function App() {
         setIsPiPActive(false);
       });
 
-      // Reset body margin/padding
-      pipWin.document.documentElement.style.cssText = "margin:0;padding:0;height:100%;overflow:hidden;";
-      pipWin.document.body.style.cssText = "margin:0;padding:0;height:100%;overflow:hidden;";
+      // Match the main app background to avoid a white flash before first render
+      const bg = stateRef.current.dark ? "#1e1e1e" : "#f5f5f5";
+      pipWin.document.documentElement.style.cssText = `margin:0;padding:0;height:100%;overflow:hidden;background:${bg};`;
+      pipWin.document.body.style.cssText = `margin:0;padding:0;height:100%;overflow:hidden;background:${bg};`;
 
       // Mount a React root in the PiP window
       const container = pipWin.document.createElement("div");
       container.style.height = "100%";
       pipWin.document.body.appendChild(container);
       pipRootRef.current = createRoot(container);
-    } catch {
-      // PiP request denied or not supported in this context
+    } catch (err) {
+      const msg = err?.name === "NotAllowedError"
+        ? "Mini player was blocked. Try tapping the button again."
+        : "Couldn't open the mini player.";
+      showPipError(msg);
     }
   }
 
@@ -2542,8 +2648,36 @@ export default function App() {
       </div>
     </div>
 
-    {/* Hidden canvas + video used for Video PiP (Android / iOS) */}
-    <canvas ref={canvasRef} width={260} height={150}
+    {/* PiP error toast (user-gesture denials, unsupported browsers, etc.) */}
+    {pipError && (
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          position: "fixed",
+          left: "50%",
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)",
+          transform: "translateX(-50%)",
+          background: state.dark ? "rgba(30,30,30,0.95)" : "rgba(255,255,255,0.98)",
+          color: state.dark ? "#eee" : "#333",
+          border: `1px solid ${state.dark ? "#444" : "#ccc"}`,
+          borderRadius: 10,
+          padding: "10px 14px",
+          fontSize: 13,
+          fontWeight: 500,
+          maxWidth: "86vw",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+          zIndex: 2000,
+          pointerEvents: "none",
+        }}
+      >
+        {pipError}
+      </div>
+    )}
+
+    {/* Hidden canvas + video used for Video PiP (Android / iOS).
+        Canvas is 320×180 (16:9) so text is crisper when the browser scales PiP up. */}
+    <canvas ref={canvasRef} width={320} height={180}
       style={{ position: "fixed", left: "-9999px", top: "-9999px", pointerEvents: "none" }}
       aria-hidden="true"
     />
@@ -2552,14 +2686,11 @@ export default function App() {
       muted
       playsInline
       onPause={(e) => {
-        // Resume only for screen-lock pauses, not user-intentional pauses.
-        // pauseTimer() nulls timerRef before the video pause fires, so
-        // timerRef.current === null means the user paused on purpose.
-        // YouTube is NOT re-played here because the page is still hidden
-        // when this fires — YouTube would immediately auto-pause again.
-        // visibilitychange (below) handles the YouTube resume on unlock.
+        // Resume only when the app wants the video playing (i.e. the timer is running).
+        // pipDesiredPlayingRef is set explicitly by startTimer/pauseTimer so this doesn't
+        // rely on the subtle ordering of timerRef = null vs. video.pause().
         const hasLiveTrack = e.target.srcObject?.getTracks().some((t) => t.readyState === "live");
-        if (hasLiveTrack && !!timerRef.current && document.pictureInPictureElement === e.target) {
+        if (hasLiveTrack && pipDesiredPlayingRef.current && document.pictureInPictureElement === e.target) {
           e.target.play().catch(() => {});
         }
       }}
