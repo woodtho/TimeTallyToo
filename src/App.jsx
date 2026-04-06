@@ -385,18 +385,29 @@ export default function App() {
   /* Keep voicesRef current so timer callbacks never use stale closures */
   useEffect(() => { voicesRef.current = voices; }, [voices]);
 
-  /* Resume YouTube when screen unlocks (page becomes visible again).
-     We do this here rather than in the video's onPause handler because
-     YouTube auto-pauses when the page is hidden — sending play while
-     still hidden causes a start-then-immediately-stop flicker. */
+  /* Keep YouTube in sync with page visibility (screen lock / app switch).
+     - On hide: wait 650 ms for YouTube's auto-pause to settle, then send
+       playVideo.  This lets audio continue during screen lock on devices
+       that allow background media.
+     - On show: resume immediately when the screen unlocks. */
   useEffect(() => {
+    let hideTimer = null;
     function onVisibility() {
-      if (!document.hidden && timerRef.current) {
+      clearTimeout(hideTimer);
+      if (!timerRef.current) return;
+      if (document.hidden) {
+        hideTimer = setTimeout(() => {
+          if (timerRef.current) playYouTubeIfAny(stateRef.current.currentTaskIndex);
+        }, 650);
+      } else {
         playYouTubeIfAny(stateRef.current.currentTaskIndex);
       }
     }
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimeout(hideTimer);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Keep PiP overlays in sync with current timer state */
@@ -1381,9 +1392,7 @@ export default function App() {
     const video = videoRef.current;
     if (!canvas || !video) return;
     try {
-      // Reuse the existing stream if its tracks are still live — repeatedly
-      // stopping and recreating the stream corrupts the video element's internal
-      // state after a few cycles. Only create a new one if necessary.
+      // Reuse the existing stream if its tracks are still live
       const hasLiveTrack = video.srcObject?.getTracks().some((t) => t.readyState === "live");
       if (!hasLiveTrack) {
         video.srcObject = canvas.captureStream(4);
@@ -1394,6 +1403,22 @@ export default function App() {
       await video.requestPictureInPicture();
       setIsPiPVideoActive(true);
       video.addEventListener("leavepictureinpicture", () => setIsPiPVideoActive(false), { once: true });
+
+      // Register Media Session handlers now so the PiP play/pause button
+      // works even before the timer has been started for the first time.
+      if ("mediaSession" in navigator) {
+        try {
+          navigator.mediaSession.setActionHandler("play",      () => startTimer());
+          navigator.mediaSession.setActionHandler("pause",     () => pauseTimer());
+          navigator.mediaSession.setActionHandler("nexttrack", () => skipTask());
+        } catch { /* ignore */ }
+      }
+
+      // If the timer isn't running, pause the canvas video so the PiP
+      // shows a ▶ (play) button rather than a ⏸ (pause) button.
+      if (!timerRef.current) {
+        video.pause();
+      }
     } catch { /* denied or unsupported */ }
   }
 
