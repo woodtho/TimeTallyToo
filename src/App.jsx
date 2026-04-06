@@ -1239,16 +1239,24 @@ export default function App() {
     playYouTubeIfAny(startIndex);
     _startInterval();
     activateMediaSession(arr[startIndex]);
+    // Resume canvas video if PiP is already open (e.g. user paused then resumed)
+    if (videoRef.current && document.pictureInPictureElement === videoRef.current && videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+    }
   }
 
   function pauseTimer() {
     if (!timerRef.current) return;
     clearInterval(timerRef.current);
-    timerRef.current = null;
+    timerRef.current = null; // null BEFORE pausing video so onPause guard sees timer is stopped
     setIsRunning(false);
     pauseCurrentYouTube();
     pauseAllYouTube(); // belt-and-suspenders
     deactivateMediaSession();
+    // Pause canvas video so PiP shows the correct paused state
+    if (videoRef.current && document.pictureInPictureElement === videoRef.current) {
+      videoRef.current.pause();
+    }
     // Commit accrued time on pause
     if (sessionAccrualRef.current > 0) {
       const accrued = sessionAccrualRef.current;
@@ -1279,11 +1287,12 @@ export default function App() {
     ctx.fillStyle = isRunning ? "#4caf50" : "#9e9e9e";
     ctx.fillRect(0, 0, W * pct / 100, 5);
 
-    // Task name
+    // Task name / YouTube badge
     const rawName = currentTask?.name ?? "";
-    const taskLabel = rawName.match(/^https?:\/\//) ? "Video task" : (rawName || "Ready");
-    ctx.fillStyle = dark ? "#9e9e9e" : "#757575";
-    ctx.font = "14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    const isYT = rawName.match(/^https?:\/\//);
+    const taskLabel = isYT ? "▶ YouTube" : (rawName || "Ready");
+    ctx.fillStyle = isYT ? (dark ? "#ff6060" : "#cc0000") : (dark ? "#9e9e9e" : "#757575");
+    ctx.font = `${isYT ? "bold " : ""}14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
     ctx.textBaseline = "top";
     let label = taskLabel;
     while (ctx.measureText(label + "…").width > W - 20 && label.length > 1) label = label.slice(0, -1);
@@ -2421,12 +2430,16 @@ export default function App() {
       muted
       playsInline
       onPause={(e) => {
-        // When the screen locks the browser pauses the video, which would close PiP.
-        // Only resume if the stream tracks are still live — avoids a fight with
-        // openVideoPiP on the rare path where the stream genuinely needs replacing.
+        // Resume only for screen-lock pauses, not user-intentional pauses.
+        // When the user pauses via the PiP controls, pauseTimer() clears
+        // timerRef *before* the pause event fires, so we can tell them apart.
         const hasLiveTrack = e.target.srcObject?.getTracks().some((t) => t.readyState === "live");
-        if (hasLiveTrack && document.pictureInPictureElement === e.target) {
+        const timerRunning = !!timerRef.current;
+        if (hasLiveTrack && timerRunning && document.pictureInPictureElement === e.target) {
           e.target.play().catch(() => {});
+          // Also nudge YouTube back to playing if screen just woke up
+          const s = stateRef.current;
+          playYouTubeIfAny(s.currentTaskIndex);
         }
       }}
       style={{ position: "fixed", left: "-9999px", top: "-9999px", width: 1, height: 1 }}
