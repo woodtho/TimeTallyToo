@@ -319,8 +319,7 @@ export default function App() {
   const [confirmDeleteList, setConfirmDeleteList] = useState(null);
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
-  const [ioMenuOpen, setIoMenuOpen] = useState(false);      // header import/export popover
-  const ioMenuRef = useRef(null);                            // wrapper for outside-click detection
+  const [showDataPage, setShowDataPage] = useState(false);  // full-page Import/Export overlay
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [expandedLists, setExpandedLists] = useState({});
@@ -443,27 +442,6 @@ export default function App() {
       drawTimerCanvas();
     }
   });
-
-  /* Outside-click + Escape close for the header import/export popover */
-  useEffect(() => {
-    if (!ioMenuOpen) return;
-    function onDown(e) {
-      if (ioMenuRef.current && !ioMenuRef.current.contains(e.target)) {
-        setIoMenuOpen(false);
-      }
-    }
-    function onKey(e) {
-      if (e.key === "Escape") setIoMenuOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("touchstart", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("touchstart", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [ioMenuOpen]);
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -2086,12 +2064,13 @@ export default function App() {
             </ul>
           </div>
           <div className="help-card-overlay">
-            <h3><i className="fas fa-arrow-down-up-across-line" /> Import / Export</h3>
+            <h3><i className="fas fa-database" /> Backup &amp; Restore</h3>
             <ul className="help-list">
-              <li><b>Where:</b> Open the <i className="fas fa-arrow-down-up-across-line" /> menu in the header.</li>
-              <li><b>Export all lists:</b> Downloads every list as a single XML file, including task durations, remaining time, and YouTube metadata.</li>
-              <li><b>Import from file:</b> Load an XML file to add lists and tasks. Imported lists are <em>appended</em> — existing lists with the same name keep their tasks and gain the imported ones rather than being overwritten.</li>
-              <li><b>Limits:</b> Maximum file size is 5 MB. Files must be valid XML produced by TimeTally (or with the same shape).</li>
+              <li><b>Where:</b> Tap the <i className="fas fa-database" /> icon in the header to open the Backup &amp; Restore page.</li>
+              <li><b>Export:</b> Downloads every list as a single XML file you can keep as a backup or move to another browser. Includes task durations, remaining time, enabled state, and YouTube metadata.</li>
+              <li><b>Import:</b> Load an XML file to add lists and tasks. Imported lists are <em>appended</em> — existing lists with the same name keep their tasks and gain the imported ones rather than being overwritten.</li>
+              <li><b>Limits:</b> Maximum file size is 5 MB. Files must be valid TimeTally XML.</li>
+              <li><b>Why back up?</b> All your data lives in your browser only — clearing browser data, switching devices, or trying a new browser will lose it unless you've exported a backup.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
@@ -2112,6 +2091,127 @@ export default function App() {
         </div>
       </div>
     )}
+
+    {/* Data (Backup & Restore) full-screen overlay */}
+    {showDataPage && (() => {
+      // Summary stats for the export card
+      const listCount = state.listOrder.length;
+      let taskCount = 0;
+      let totalSecondsRemaining = 0;
+      let totalSecondsAll = 0;
+      for (const ln of state.listOrder) {
+        const ts = state.lists[ln] || [];
+        taskCount += ts.length;
+        for (const t of ts) {
+          totalSecondsRemaining += Number(t.remaining) || 0;
+          totalSecondsAll += Number(t.time) || 0;
+        }
+      }
+      const lastIo = ioStatus;
+      return (
+        <div className={`options-overlay${state.dark ? " dark-mode" : ""}`}>
+          <div className="options-overlay-header">
+            <span className="options-overlay-title">Backup &amp; Restore</span>
+            <button
+              className="options-close-button"
+              onClick={() => setShowDataPage(false)}
+              aria-label="Close"
+            >
+              <i className="fas fa-xmark" />
+            </button>
+          </div>
+          <div className="options-overlay-body data-overlay-body">
+
+            {/* Summary card */}
+            <div className="data-card">
+              <h3><i className="fas fa-circle-info" /> Your data</h3>
+              <div className="data-summary">
+                <div className="data-summary-item">
+                  <div className="data-summary-value">{listCount}</div>
+                  <div className="data-summary-label">{listCount === 1 ? "list" : "lists"}</div>
+                </div>
+                <div className="data-summary-item">
+                  <div className="data-summary-value">{taskCount}</div>
+                  <div className="data-summary-label">{taskCount === 1 ? "task" : "tasks"}</div>
+                </div>
+                <div className="data-summary-item">
+                  <div className="data-summary-value">{formatHMS(totalSecondsAll)}</div>
+                  <div className="data-summary-label">total time</div>
+                </div>
+              </div>
+              <p className="data-card-note">
+                Stored locally in your browser. Nothing is uploaded to a server.
+              </p>
+            </div>
+
+            {/* Export card */}
+            <div className="data-card">
+              <h3><i className="fas fa-cloud-arrow-down" /> Export</h3>
+              <p className="data-card-text">
+                Save every list to a single XML file you can keep as a backup or
+                move to another browser. Includes task names, durations,
+                remaining time, enabled state, and YouTube metadata.
+              </p>
+              <button
+                className="data-action-btn data-action-btn--primary"
+                onClick={() => exportTasksToXML()}
+                disabled={taskCount === 0}
+              >
+                <i className="fas fa-cloud-arrow-down" />
+                <span>Download backup</span>
+              </button>
+              {taskCount === 0 && (
+                <p className="data-card-note data-card-note--muted">
+                  Add at least one task before exporting.
+                </p>
+              )}
+            </div>
+
+            {/* Import card */}
+            <div className="data-card">
+              <h3><i className="fas fa-cloud-arrow-up" /> Import</h3>
+              <p className="data-card-text">
+                Load lists from an XML file you previously exported. Imported
+                lists are <b>appended</b> — if a list with the same name
+                already exists, the new tasks are added to the end of it
+                rather than replacing what's there.
+              </p>
+              <button
+                className="data-action-btn data-action-btn--primary"
+                onClick={() => importFileRef.current?.click()}
+              >
+                <i className="fas fa-folder-open" />
+                <span>Choose XML file…</span>
+              </button>
+              <ul className="data-card-bullets">
+                <li>Maximum file size: 5 MB</li>
+                <li>Format: TimeTally XML (<code>.xml</code>)</li>
+                <li>YouTube URLs are auto-detected and re-embedded</li>
+              </ul>
+            </div>
+
+            {/* Status banner — sticky inside the overlay so users see the result */}
+            {lastIo && (
+              <div className={`data-status data-status--${lastIo.type}${state.dark ? " dark-mode" : ""}`}>
+                <i className={`fas fa-${lastIo.type === "success" ? "circle-check" : "circle-exclamation"}`} />
+                <span>{lastIo.msg}</span>
+              </div>
+            )}
+
+            {/* Tips card */}
+            <div className="data-card">
+              <h3><i className="fas fa-lightbulb" /> Tips</h3>
+              <ul className="data-card-bullets">
+                <li>Export before clearing browser data, switching devices, or trying a different browser.</li>
+                <li>You can edit the exported XML in any text editor — the schema is straightforward.</li>
+                <li>Backups don't include per-list settings or stats; those live with your browser profile.</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Options full-screen overlay */}
     {state.showOptions && (
@@ -2381,50 +2481,22 @@ export default function App() {
       <header>
         <h1>TimeTally</h1>
         <div className="header-buttons">
-          {/* Import/Export popover — replaces the bottom-bar IO controls */}
-          <div className="io-menu-wrapper" ref={ioMenuRef}>
-            <button
-              className={`io-menu-button${ioMenuOpen ? " io-menu-button--active" : ""}`}
-              title="Import / Export"
-              aria-label="Import or export tasks"
-              aria-haspopup="menu"
-              aria-expanded={ioMenuOpen}
-              onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); setIoMenuOpen((v) => !v); }}
-            >
-              <i className="fas fa-arrow-down-up-across-line" />
-            </button>
-            {ioMenuOpen && (
-              <div
-                className={`io-menu-popover menu-popover${state.dark ? " dark-mode" : ""}`}
-                role="menu"
-              >
-                <button
-                  className="menu-item"
-                  role="menuitem"
-                  onClick={() => { setIoMenuOpen(false); exportTasksToXML(); }}
-                >
-                  <i className="fas fa-file-export" />
-                  <span>Export all lists</span>
-                </button>
-                <button
-                  className="menu-item"
-                  role="menuitem"
-                  onClick={() => { setIoMenuOpen(false); importFileRef.current?.click(); }}
-                >
-                  <i className="fas fa-file-import" />
-                  <span>Import from file…</span>
-                </button>
-                <p className="io-menu-hint">XML file. Imported lists are appended.</p>
-              </div>
-            )}
-            <input
-              ref={importFileRef}
-              type="file"
-              accept=".xml"
-              onChange={onFileLoaded}
-              style={{ display: "none" }}
-            />
-          </div>
+          <button
+            className="data-button"
+            title="Backup &amp; restore"
+            aria-label="Open backup and restore"
+            onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); setShowDataPage(true); }}
+          >
+            <i className="fas fa-database" />
+          </button>
+          {/* Hidden file input shared by the Data overlay's Import card */}
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".xml"
+            onChange={onFileLoaded}
+            style={{ display: "none" }}
+          />
           <button
             className="stats-button"
             title="Stats"
@@ -2696,9 +2768,11 @@ export default function App() {
       </div>
     </div>
 
-    {/* Import/Export status toast — now that the bottom IO bar is gone, surface the
-        success/error message as a centered floating toast above the timer footer. */}
-    {ioStatus && (
+    {/* Import/Export status toast — surfaced as a floating toast when the user
+        triggers IO from outside the Backup & Restore page. The Data overlay
+        renders its own inline status banner, so suppress this duplicate while
+        the overlay is open. */}
+    {ioStatus && !showDataPage && (
       <div
         role="status"
         className={`io-toast io-toast--${ioStatus.type}${state.dark ? " dark-mode" : ""}`}

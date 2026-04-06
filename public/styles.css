@@ -1258,7 +1258,7 @@ header {
 .gear-button,
 .help-button,
 .stats-button,
-.io-menu-button {
+.data-button {
   background: transparent;
   border: none;
   color: #2196f3;
@@ -1270,52 +1270,210 @@ header {
 .gear-button:hover,
 .help-button:hover,
 .stats-button:hover,
-.io-menu-button:hover {
+.data-button:hover {
   color: #1976d2;
 }
 
-/* Header import/export popover */
-.io-menu-wrapper {
-  position: relative;
-  display: inline-flex;
+/* ===================================================
+   Backup & Restore (Data) overlay
+   Mirrors .help-card-overlay / .options-section structure exactly so it
+   feels like a sibling of the Help and Settings pages.
+   =================================================== */
+.data-overlay-body {
+  gap: 12px;
+}
+
+.data-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.options-overlay.dark-mode .data-card {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.data-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  display: flex;
   align-items: center;
+  gap: 7px;
 }
-
-.io-menu-button--active {
-  color: #1976d2;
+.options-overlay.dark-mode .data-card h3 {
+  color: #f0f0f0;
 }
-.dark-mode .io-menu-button--active {
-  color: #64b5f6;
-}
-
-.io-menu-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  min-width: 220px;
-  z-index: 1000;
-}
-
-.io-menu-popover .menu-item i {
-  width: 18px;
-  text-align: center;
+.data-card h3 i {
   color: #2196f3;
+  font-size: 15px;
 }
-.io-menu-popover.dark-mode .menu-item i {
+.options-overlay.dark-mode .data-card h3 i {
   color: #90caf9;
 }
 
-.io-menu-hint {
-  margin: 4px 12px 6px;
-  padding-top: 6px;
-  border-top: 1px solid #e0e0e0;
-  font-size: 11px;
-  color: #888;
-  line-height: 1.35;
+.data-card-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.55;
 }
-.io-menu-popover.dark-mode .io-menu-hint {
-  border-top-color: #3a3a3a;
+.options-overlay.dark-mode .data-card-text {
+  color: #bbb;
+}
+
+.data-card-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
+}
+.options-overlay.dark-mode .data-card-note {
   color: #888;
+}
+.data-card-note--muted {
+  font-style: italic;
+}
+
+.data-card-bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+.data-card-bullets li {
+  font-size: 12.5px;
+  color: #555;
+  line-height: 1.55;
+  margin-bottom: 3px;
+}
+.data-card-bullets li:last-child { margin-bottom: 0; }
+.data-card-bullets code {
+  background: rgba(33, 150, 243, 0.08);
+  color: #1976d2;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-family: 'Courier New', Courier, monospace;
+}
+.options-overlay.dark-mode .data-card-bullets li {
+  color: #aaa;
+}
+.options-overlay.dark-mode .data-card-bullets code {
+  background: rgba(144, 202, 249, 0.12);
+  color: #90caf9;
+}
+
+/* Summary stats row inside the "Your data" card */
+.data-summary {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+.data-summary-item {
+  flex: 1;
+  background: #f5f7fa;
+  border: 1px solid #e6e9ef;
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  min-width: 0;
+}
+.options-overlay.dark-mode .data-summary-item {
+  background: #1e1e1e;
+  border-color: #3a3a3c;
+}
+.data-summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2196f3;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.options-overlay.dark-mode .data-summary-value {
+  color: #90caf9;
+}
+.data-summary-label {
+  font-size: 11px;
+  color: #777;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+.options-overlay.dark-mode .data-summary-label {
+  color: #888;
+}
+
+/* Big primary action buttons inside data cards */
+.data-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+.data-action-btn:active {
+  transform: scale(0.985);
+}
+.data-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.data-action-btn--primary {
+  background: #2196f3;
+  color: #fff;
+}
+.data-action-btn--primary:hover:not(:disabled) {
+  background: #1976d2;
+}
+.options-overlay.dark-mode .data-action-btn--primary {
+  background: #1976d2;
+}
+.options-overlay.dark-mode .data-action-btn--primary:hover:not(:disabled) {
+  background: #1565c0;
+}
+.data-action-btn i {
+  font-size: 16px;
+}
+
+/* Inline status banner — shown inside the overlay after import/export */
+.data-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.data-status i { font-size: 16px; }
+.data-status--success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.data-status--error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+.data-status.dark-mode.data-status--success {
+  background: #1b3a1f;
+  color: #81c784;
+  border-color: #388e3c;
+}
+.data-status.dark-mode.data-status--error {
+  background: #3b1a1a;
+  color: #ef9a9a;
+  border-color: #c62828;
 }
 
 /* Floating IO status toast (replaces the old bottom-bar status line) */
@@ -1729,7 +1887,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   .help-button,
   .stats-button,
   .dark-mode-button,
-  .io-menu-button {
+  .data-button {
     font-size: 20px;
     padding: 4px 6px;
     min-height: 40px;
