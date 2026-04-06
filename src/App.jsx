@@ -64,13 +64,36 @@ const defaultListStats = () => ({
   bestStreak: 0,        // all-time best consecutive days
 });
 
+// First-run example list — a classic Pomodoro focus session that doubles as a
+// "what is this app for?" demo. Only seeded for users with no existing
+// localStorage (loadState short-circuits to this when LS_KEY is missing).
+const EXAMPLE_LIST_NAME = "Focus Session";
+const exampleFocusSessionTasks = () => {
+  const mk = (name, secs) => ({
+    id: crypto.randomUUID(),
+    name,
+    time: secs,
+    remaining: secs,
+    enabled: true,
+    editing: false,
+  });
+  return [
+    mk("Plan today's wins",            3 * 60),
+    mk("Deep work — focus block 1",   25 * 60),
+    mk("Stretch & water",              5 * 60),
+    mk("Deep work — focus block 2",   25 * 60),
+    mk("Walk away & breathe",         10 * 60),
+    mk("Review & set tomorrow's goal", 5 * 60),
+  ];
+};
+
 const defaultState = () => ({
-  lists: { default: [] },
-  listOrder: ["default"],
-  currentList: "default",
+  lists: { [EXAMPLE_LIST_NAME]: exampleFocusSessionTasks() },
+  listOrder: [EXAMPLE_LIST_NAME],
+  currentList: EXAMPLE_LIST_NAME,
   currentTaskIndex: 0,
-  listConfigs: { default: defaultConfig() },
-  listStats: { default: defaultListStats() },
+  listConfigs: { [EXAMPLE_LIST_NAME]: defaultConfig() },
+  listStats: { [EXAMPLE_LIST_NAME]: defaultListStats() },
   dark: true,
   showHelp: false,
   showOptions: false,
