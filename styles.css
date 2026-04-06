@@ -1258,6 +1258,7 @@ header {
 .gear-button,
 .help-button,
 .stats-button,
+.feedback-button,
 .data-button {
   background: transparent;
   border: none;
@@ -1270,6 +1271,7 @@ header {
 .gear-button:hover,
 .help-button:hover,
 .stats-button:hover,
+.feedback-button:hover,
 .data-button:hover {
   color: #1976d2;
 }
@@ -1460,6 +1462,56 @@ header {
 }
 .data-action-btn i {
   font-size: 16px;
+}
+
+/* ===================================================
+   Feedback overlay
+   =================================================== */
+.feedback-overlay-body {
+  max-width: 980px;
+  flex: 1;
+  min-height: 0;
+}
+
+.feedback-card {
+  padding: 16px;
+}
+
+.feedback-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-card-header h3 {
+  margin: 0;
+}
+
+.feedback-open-link {
+  width: auto;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.feedback-embed-shell {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  min-height: clamp(620px, calc(100dvh - 220px), 1200px);
+}
+.options-overlay.dark-mode .feedback-embed-shell {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.feedback-embed-frame {
+  display: block;
+  width: 100%;
+  height: clamp(620px, calc(100dvh - 220px), 1200px);
+  border: 0;
+  background: #fff;
 }
 
 /* ===================================================
@@ -2070,6 +2122,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   .gear-button,
   .help-button,
   .stats-button,
+  .feedback-button,
   .dark-mode-button,
   .data-button {
     font-size: 20px;
@@ -2079,6 +2132,21 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   }
   .header-buttons {
     gap: 4px;
+  }
+
+  .feedback-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feedback-open-link {
+    width: 100%;
+  }
+
+  .feedback-embed-shell,
+  .feedback-embed-frame {
+    min-height: calc(100dvh - 245px);
+    height: calc(100dvh - 245px);
   }
 
   /* --- Section boxes: tighter on mobile --- */
