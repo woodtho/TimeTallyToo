@@ -319,6 +319,8 @@ export default function App() {
   const [confirmDeleteList, setConfirmDeleteList] = useState(null);
   const [ioStatus, setIoStatus] = useState(null);           // { type: 'success'|'error', msg: string } | null
   const ioStatusTimerRef = useRef(null);
+  const [ioMenuOpen, setIoMenuOpen] = useState(false);      // header import/export popover
+  const ioMenuRef = useRef(null);                            // wrapper for outside-click detection
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [expandedLists, setExpandedLists] = useState({});
@@ -441,6 +443,27 @@ export default function App() {
       drawTimerCanvas();
     }
   });
+
+  /* Outside-click + Escape close for the header import/export popover */
+  useEffect(() => {
+    if (!ioMenuOpen) return;
+    function onDown(e) {
+      if (ioMenuRef.current && !ioMenuRef.current.contains(e.target)) {
+        setIoMenuOpen(false);
+      }
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setIoMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [ioMenuOpen]);
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -1218,8 +1241,8 @@ export default function App() {
               const cl = stateRef.current.currentList;
               navigator.mediaSession.metadata = new MediaMetadata({
                 title: fx.task?.name && !fx.task.name.match(/^https?:\/\//) ? fx.task.name : "Timer running",
-                artist: cl === "default" ? "TimeTallyToo" : cl,
-                album: "TimeTallyToo",
+                artist: cl === "default" ? "TimeTally" : cl,
+                album: "TimeTally",
               });
             } catch { /* ignore */ }
           }
@@ -1578,8 +1601,8 @@ export default function App() {
       const cl = stateRef.current.currentList;
       navigator.mediaSession.metadata = new MediaMetadata({
         title: task?.name && !task.name.match(/^https?:\/\//) ? task.name : "Timer running",
-        artist: cl === "default" ? "TimeTallyToo" : cl,
-        album: "TimeTallyToo",
+        artist: cl === "default" ? "TimeTally" : cl,
+        album: "TimeTally",
       });
       navigator.mediaSession.playbackState = "playing";
       navigator.mediaSession.setActionHandler("play", () => startTimer());
@@ -2008,7 +2031,8 @@ export default function App() {
               <li><b>Add a task:</b> Enter a name and duration, choose seconds / minutes / hours, then press <span className="kbd">+</span>.</li>
               <li><b>Set current task:</b> Click any task row to make it the active task.</li>
               <li><b>Enable / disable:</b> Use the toggle on each task to include or skip it during a run.</li>
-              <li><b>Multiple lists:</b> Create separate lists (tabs) for different focus blocks, study sets, or circuits. Settings are saved per list.</li>
+              <li><b>Multiple lists:</b> Create separate lists (tabs) for different focus blocks, study sets, or circuits. Each list keeps its own settings, stats, and task order.</li>
+              <li><b>Stats:</b> Open the <i className="fas fa-chart-bar" /> chart icon in the header to see per-list session count, completion rate, and time worked.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
@@ -2018,12 +2042,13 @@ export default function App() {
               <li><b>Skip:</b> Jump to the next enabled task; remaining time on the skipped task is unchanged.</li>
               <li><b>Complete:</b> Mark the current task done immediately and advance to the next.</li>
               <li><b>Restart:</b> Reset all tasks to their original durations and return to the first task.</li>
+              <li><b>Lock-screen / notification controls:</b> While a timer is running, your phone's lock screen and notification shade show play, pause, and skip buttons that drive TimeTally directly.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
             <h3><i className="fas fa-sliders" /> Settings</h3>
             <ul className="help-list">
-              <li><b>Display:</b> Choose what the timer bar shows (task name, time, percentage, task count, ETA). Toggle compact task rows and the progress bar scope (whole list or current task).</li>
+              <li><b>Display:</b> Choose what the timer bar shows (task name, time remaining, percentage, task count, ETA). Toggle compact task rows and the progress bar scope (whole list or current task).</li>
               <li><b>Timer:</b> Auto-start next task, count up or down, and set a warning highlight when time is low.</li>
               <li><b>Audio:</b> Enable a beep on task start. Set volume, tone (low / medium / high), and how many beeps play.</li>
               <li><b>Voice:</b> Enable text-to-speech. Choose a system voice and what gets announced (task name, duration, a custom message, or a random affirmation).</li>
@@ -2036,7 +2061,7 @@ export default function App() {
             <ul className="help-list">
               <li><b>Edit a task:</b> Open the <span className="dots">…</span> menu on a task and choose Edit. Change the name or total duration; remaining time resets when the duration changes.</li>
               <li><b>Delete a task:</b> Open the <span className="dots">…</span> menu and choose Delete.</li>
-              <li><b>Reorder tasks:</b> Drag using the grip handle (<i className="fas fa-grip-vertical" />) on the left of each task row.</li>
+              <li><b>Reorder tasks:</b> Drag the grip handle (<i className="fas fa-grip-vertical" />) on the left of each row. Works with both mouse and touch.</li>
               <li><b>List tabs:</b> Open the <span className="dots">…</span> on a tab to rename or delete the list. Drag tabs to rearrange their order.</li>
             </ul>
           </div>
@@ -2046,20 +2071,34 @@ export default function App() {
               <li><b>Add a video task:</b> Paste any YouTube URL into the task name field. Supports youtube.com, youtu.be, Shorts, and embed links.</li>
               <li><b>Auto-play:</b> The embedded player starts automatically when that task becomes active and pauses when you switch tasks.</li>
               <li><b>Import:</b> YouTube URLs in imported XML files are auto-detected and embedded.</li>
+              <li><b>Listening with the screen off:</b> See the Mini player section below — opening picture-in-picture before locking the screen is the most reliable way to keep YouTube audio playing.</li>
             </ul>
           </div>
           <div className="help-card-overlay">
-            <h3><i className="fas fa-file-import" /> Import / Export</h3>
+            <h3><i className="fas fa-up-right-and-down-left-from-center" /> Mini player (picture-in-picture)</h3>
             <ul className="help-list">
-              <li><b>Export:</b> Downloads all your lists as an XML file, including task durations, remaining time, and YouTube metadata.</li>
-              <li><b>Import:</b> Load an XML file to add lists and tasks. Existing lists with the same name are appended to, not replaced.</li>
+              <li><b>What it is:</b> A floating mini window that shows the current task name, countdown, and play/pause button. You can open it from the <i className="fas fa-expand-alt" /> button in the timer footer.</li>
+              <li><b>Desktop (Chrome / Edge):</b> Opens a separate floating window styled to match TimeTally. You can drag, resize, and click play/pause from any other app or window.</li>
+              <li><b>Mobile (Android Chrome):</b> Opens a system picture-in-picture overlay that floats above other apps. Play/pause works from inside the overlay.</li>
+              <li><b>Listening with the screen locked:</b> Open the mini player <em>before</em> you lock the screen. Picture-in-picture keeps the page treated as visible, which prevents YouTube's embedded player from auto-pausing on lock. If you simply lock the screen <em>without</em> opening the mini player first, YouTube will pause itself — this is a YouTube cross-origin restriction TimeTally cannot override.</li>
+              <li><b>iPhone / Safari:</b> Mini player support is limited and may be unavailable depending on iOS version.</li>
+              <li><b>Mini player hidden?</b> The button only appears in browsers that support picture-in-picture (Chrome 116+ on desktop, Chrome 92+ on Android).</li>
+            </ul>
+          </div>
+          <div className="help-card-overlay">
+            <h3><i className="fas fa-arrow-down-up-across-line" /> Import / Export</h3>
+            <ul className="help-list">
+              <li><b>Where:</b> Open the <i className="fas fa-arrow-down-up-across-line" /> menu in the header.</li>
+              <li><b>Export all lists:</b> Downloads every list as a single XML file, including task durations, remaining time, and YouTube metadata.</li>
+              <li><b>Import from file:</b> Load an XML file to add lists and tasks. Imported lists are <em>appended</em> — existing lists with the same name keep their tasks and gain the imported ones rather than being overwritten.</li>
+              <li><b>Limits:</b> Maximum file size is 5 MB. Files must be valid XML produced by TimeTally (or with the same shape).</li>
             </ul>
           </div>
           <div className="help-card-overlay">
             <h3><i className="fas fa-circle-question" /> Tips</h3>
             <ul className="help-list">
               <li>Everything saves automatically in your browser — no account needed.</li>
-              <li>Open TimeTallyToo in multiple tabs; changes sync instantly between them.</li>
+              <li>Open TimeTally in multiple tabs; changes sync instantly between them.</li>
               <li>Install as an app from your browser menu for a distraction-free experience.</li>
               <li>Disable tasks you want to skip without deleting them.</li>
             </ul>
@@ -2340,18 +2379,52 @@ export default function App() {
     )}
     <div className={containerClasses}>
       <header>
-        <h1>TimeTallyToo</h1>
+        <h1>TimeTally</h1>
         <div className="header-buttons">
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="github-button"
-            title={`View on GitHub · v${APP_VERSION}`}
-            aria-label="View source on GitHub"
-          >
-            <i className="fab fa-github" />
-          </a>
+          {/* Import/Export popover — replaces the bottom-bar IO controls */}
+          <div className="io-menu-wrapper" ref={ioMenuRef}>
+            <button
+              className={`io-menu-button${ioMenuOpen ? " io-menu-button--active" : ""}`}
+              title="Import / Export"
+              aria-label="Import or export tasks"
+              aria-haspopup="menu"
+              aria-expanded={ioMenuOpen}
+              onClick={() => { setMenuOpenTask(null); setMenuOpenTab(null); setIoMenuOpen((v) => !v); }}
+            >
+              <i className="fas fa-arrow-down-up-across-line" />
+            </button>
+            {ioMenuOpen && (
+              <div
+                className={`io-menu-popover menu-popover${state.dark ? " dark-mode" : ""}`}
+                role="menu"
+              >
+                <button
+                  className="menu-item"
+                  role="menuitem"
+                  onClick={() => { setIoMenuOpen(false); exportTasksToXML(); }}
+                >
+                  <i className="fas fa-file-export" />
+                  <span>Export all lists</span>
+                </button>
+                <button
+                  className="menu-item"
+                  role="menuitem"
+                  onClick={() => { setIoMenuOpen(false); importFileRef.current?.click(); }}
+                >
+                  <i className="fas fa-file-import" />
+                  <span>Import from file…</span>
+                </button>
+                <p className="io-menu-hint">XML file. Imported lists are appended.</p>
+              </div>
+            )}
+            <input
+              ref={importFileRef}
+              type="file"
+              accept=".xml"
+              onChange={onFileLoaded}
+              style={{ display: "none" }}
+            />
+          </div>
           <button
             className="stats-button"
             title="Stats"
@@ -2617,35 +2690,23 @@ export default function App() {
         isPiPVideoActive={isPiPVideoActive}
       />
 
-      {/* Import / Export */}
-      <div className="import-export">
-        <div className="import-export-buttons">
-          <button className="btn-export" onClick={exportTasksToXML} title="Export Tasks">
-            <i className="fas fa-file-export" /> Export Tasks
-          </button>
-          {/* Fix #2: trigger via ref instead of document.getElementById */}
-          <button id="importFileBttn" onClick={() => importFileRef.current?.click()} title="Import Tasks">
-            <i className="fas fa-file-import" /> Import Tasks
-          </button>
-          <input
-            ref={importFileRef}
-            type="file"
-            accept=".xml"
-            onChange={onFileLoaded}
-            style={{ display: "none" }}
-          />
-        </div>
-        {ioStatus && (
-          <p className={`io-status io-status--${ioStatus.type}${state.dark ? " dark-mode" : ""}`}>
-            {ioStatus.msg}
-          </p>
-        )}
-        {/* Always-present aria-live region so screen readers announce IO status changes */}
-        <div className="sr-only" aria-live="polite" aria-atomic="true">
-          {ioStatus?.msg ?? ""}
-        </div>
+      {/* Always-present aria-live region so screen readers announce IO status changes */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {ioStatus?.msg ?? ""}
       </div>
     </div>
+
+    {/* Import/Export status toast — now that the bottom IO bar is gone, surface the
+        success/error message as a centered floating toast above the timer footer. */}
+    {ioStatus && (
+      <div
+        role="status"
+        className={`io-toast io-toast--${ioStatus.type}${state.dark ? " dark-mode" : ""}`}
+      >
+        <i className={`fas fa-${ioStatus.type === "success" ? "circle-check" : "circle-exclamation"}`} />
+        <span>{ioStatus.msg}</span>
+      </div>
+    )}
 
     {/* PiP error toast (user-gesture denials, unsupported browsers, etc.) */}
     {pipError && (

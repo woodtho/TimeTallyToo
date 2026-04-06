@@ -1213,92 +1213,9 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 }
 
 /* Import/Export */
-.import-export { margin-top: 25px; }
-
-.export-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.btn-export {
-  background: #009688;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.btn-export:hover { background: #00897b; }
-
-.import-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.import-section input[type="file"] {
-  background: #eee;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
-  cursor: pointer;
-  color: #555;
-  font-size: 14px;
-}
-
-#importFileBttn {
-  --fa-font-brands: normal 400 1em/1 "Font Awesome 6 Brands";
-  --fa-font-regular: normal 400 1em/1 "Font Awesome 6 Free";
-  --fa-font-solid: normal 900 1em/1 "Font Awesome 6 Free";
-  background: #009688;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-#importFileBttn:hover { background: #00897b; }
-
-.import-section input[type="file"]::-webkit-file-upload-button {
-  background: #009688;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.import-section input[type="file"]::-webkit-file-upload-button:hover { background: #00897b; }
-
-.import-export-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-
-.io-status {
-  margin: 8px 0 0;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-}
-.io-status--success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-.io-status--error   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-.io-status.dark-mode.io-status--success { background: #1b3a1f; color: #81c784; border-color: #388e3c; }
-.io-status.dark-mode.io-status--error   { background: #3b1a1a; color: #ef9a9a; border-color: #c62828; }
+/* Import/Export now lives in the header (.io-menu-*); the old bottom-bar
+   styles (.import-export, .btn-export, #importFileBttn, .io-status, ...)
+   were removed when the bar was deleted. */
 
 /* Responsive adjustments */
 @media (max-width: 400px) {
@@ -1340,7 +1257,8 @@ header {
 
 .gear-button,
 .help-button,
-.stats-button {
+.stats-button,
+.io-menu-button {
   background: transparent;
   border: none;
   color: #2196f3;
@@ -1351,22 +1269,99 @@ header {
 
 .gear-button:hover,
 .help-button:hover,
-.stats-button:hover {
+.stats-button:hover,
+.io-menu-button:hover {
   color: #1976d2;
 }
 
-.github-button {
-  display: flex;
+/* Header import/export popover */
+.io-menu-wrapper {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  color: #2196f3;
-  font-size: 24px;
-  padding: 5px;
-  text-decoration: none;
-  line-height: 1;
 }
 
-.github-button:hover {
+.io-menu-button--active {
   color: #1976d2;
+}
+.dark-mode .io-menu-button--active {
+  color: #64b5f6;
+}
+
+.io-menu-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  z-index: 1000;
+}
+
+.io-menu-popover .menu-item i {
+  width: 18px;
+  text-align: center;
+  color: #2196f3;
+}
+.io-menu-popover.dark-mode .menu-item i {
+  color: #90caf9;
+}
+
+.io-menu-hint {
+  margin: 4px 12px 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.35;
+}
+.io-menu-popover.dark-mode .io-menu-hint {
+  border-top-color: #3a3a3a;
+  color: #888;
+}
+
+/* Floating IO status toast (replaces the old bottom-bar status line) */
+.io-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 86vw;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  z-index: 2000;
+  pointer-events: none;
+  animation: ioToastIn 0.18s ease-out;
+}
+@keyframes ioToastIn {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.io-toast--success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.io-toast--error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+.io-toast.dark-mode.io-toast--success {
+  background: #1b3a1f;
+  color: #81c784;
+  border-color: #388e3c;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+.io-toast.dark-mode.io-toast--error {
+  background: #3b1a1a;
+  color: #ef9a9a;
+  border-color: #c62828;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
 }
 
 /* Help page footer — version + repo link */
@@ -1701,15 +1696,7 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
 .controls-footer {
   margin-bottom: 24px;
 }
-.import-export {
-  padding-top: 16px;
-  padding-bottom: 20px;
-  border-top: 1px solid #e0e0e0;
-  margin-top: 8px;
-}
-.container.dark-mode .import-export {
-  border-top-color: #333;
-}
+/* (.import-export bottom-bar removed; controls live in the header now) */
 
 /* ===================================================
    Mobile layout (768px and below)
@@ -1742,11 +1729,14 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
   .help-button,
   .stats-button,
   .dark-mode-button,
-  .github-button {
+  .io-menu-button {
     font-size: 20px;
     padding: 4px 6px;
     min-height: 40px;
     min-width: 40px;
+  }
+  .header-buttons {
+    gap: 4px;
   }
 
   /* --- Section boxes: tighter on mobile --- */
@@ -1961,19 +1951,6 @@ html.dark-mode .tab .ellipsis-button { color: #aaa; }
     padding: 10px 12px;
   }
 
-  /* --- Import/export: side-by-side --- */
-  .import-export {
-    margin-top: auto;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
-  }
-  .import-export-buttons {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .import-export-buttons > * {
-    flex: 1 1 130px;
-  }
 }
 
 /* === Remaining countdown in sticky footer (item 2) === */

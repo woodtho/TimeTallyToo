@@ -1,6 +1,6 @@
 {
-  "name": "TimeTallyToo",
-  "short_name": "TimeTallyToo",
+  "name": "TimeTally",
+  "short_name": "TimeTally",
   "description": "A powerful, tab-based time tracker with per-list beep & TTS options!",
   "start_url": "/",
   "scope": "/",
