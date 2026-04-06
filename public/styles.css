@@ -1018,6 +1018,14 @@ html.dark-mode .tab-create-cancel { color: #ef9a9a; }
 .btn-red { background: #f44336; }
 .btn-red:hover { background: #e53935; }
 
+.btn-pip {
+  background: #546e7a;
+  padding: 8px 10px;
+}
+.btn-pip:hover { background: #455a64; }
+.btn-pip--active { background: #0288d1; }
+.btn-pip--active:hover { background: #0277bd; }
+
 /* Current task highlight */
 .task-item.current {
   background: rgba(33, 150, 243, 0.08);

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 // Fix #9: sub-components for render isolation (React.memo prevents re-renders
 // on unrelated parent state changes, e.g. every 200ms timer tick).
 import TimerFooter from "./components/TimerFooter";
 import TaskList from "./components/TaskList";
+import PipOverlay from "./components/PipOverlay";
 
 /* ------------------------- App metadata ------------------------- */
 const APP_VERSION = __APP_VERSION__;
@@ -350,6 +352,9 @@ export default function App() {
   const draggedTabIndex = useRef(null);
   const bcRef = useRef(null);                               // BroadcastChannel ref
   const importFileRef = useRef(null); // Fix #2: replaces document.getElementById("importFile")
+  const pipWindowRef = useRef(null);  // Document PiP window reference
+  const pipRootRef = useRef(null);    // React root rendered inside the PiP window
+  const [isPiPActive, setIsPiPActive] = useState(false);
 
   // task DnD (pointer-based for mobile + desktop)
   const listRef = useRef(null);
@@ -375,6 +380,22 @@ export default function App() {
   useEffect(() => { stateRef.current = state; }, [state]);
   /* Keep voicesRef current so timer callbacks never use stale closures */
   useEffect(() => { voicesRef.current = voices; }, [voices]);
+
+  /* Keep PiP overlay in sync with current timer state */
+  useEffect(() => {
+    if (!isPiPActive || !pipRootRef.current) return;
+    pipRootRef.current.render(
+      <PipOverlay
+        isRunning={isRunning}
+        currentTask={currentTask}
+        timerDisplayTime={timerDisplayTime}
+        progress={progress}
+        dark={state.dark}
+        startTimer={startTimer}
+        pauseTimer={pauseTimer}
+      />
+    );
+  }); // no deps — re-renders alongside App to keep PiP in lockstep
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -1213,6 +1234,39 @@ export default function App() {
         const prev = s.listStats?.[cl] || defaultListStats();
         return { ...s, listStats: { ...s.listStats, [cl]: { ...prev, timeWorked: prev.timeWorked + accrued } } };
       });
+    }
+  }
+
+  async function openPiP() {
+    if (!("documentPictureInPicture" in window)) return;
+    // Toggle: close if already open
+    if (pipWindowRef.current) {
+      pipWindowRef.current.close();
+      return;
+    }
+    try {
+      const pipWin = await window.documentPictureInPicture.requestWindow({ width: 240, height: 210 });
+      pipWindowRef.current = pipWin;
+      setIsPiPActive(true);
+
+      // Clean up when PiP window is closed by the user
+      pipWin.addEventListener("pagehide", () => {
+        pipWindowRef.current = null;
+        pipRootRef.current = null;
+        setIsPiPActive(false);
+      });
+
+      // Reset body margin/padding
+      pipWin.document.documentElement.style.cssText = "margin:0;padding:0;height:100%;overflow:hidden;";
+      pipWin.document.body.style.cssText = "margin:0;padding:0;height:100%;overflow:hidden;";
+
+      // Mount a React root in the PiP window
+      const container = pipWin.document.createElement("div");
+      container.style.height = "100%";
+      pipWin.document.body.appendChild(container);
+      pipRootRef.current = createRoot(container);
+    } catch {
+      // PiP request denied or not supported in this context
     }
   }
 
@@ -2191,6 +2245,8 @@ export default function App() {
         skipTask={skipTask}
         completeEarly={completeEarly}
         restartList={restartTimer}
+        openPiP={openPiP}
+        isPiPActive={isPiPActive}
       />
 
       {/* Import / Export */}

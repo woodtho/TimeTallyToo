@@ -32,6 +32,8 @@ function _isYouTubeUrl(value = "") {
   }
 }
 
+const PIP_SUPPORTED = typeof window !== "undefined" && "documentPictureInPicture" in window;
+
 const TimerFooter = React.memo(function TimerFooter({
   config,
   dark,
@@ -50,6 +52,8 @@ const TimerFooter = React.memo(function TimerFooter({
   skipTask,
   completeEarly,
   restartList,
+  openPiP,
+  isPiPActive,
 }) {
   return (
     <div
@@ -100,6 +104,16 @@ const TimerFooter = React.memo(function TimerFooter({
         <button className="btn-red" onClick={restartList} title="Restart all tasks" aria-label="Restart all tasks">
           <i className="fas fa-undo-alt" /> Restart
         </button>
+        {PIP_SUPPORTED && (
+          <button
+            className={`btn-pip${isPiPActive ? " btn-pip--active" : ""}`}
+            onClick={openPiP}
+            title={isPiPActive ? "Close mini player" : "Open mini player"}
+            aria-label={isPiPActive ? "Close mini player" : "Open mini player"}
+          >
+            <i className={`fas fa-${isPiPActive ? "compress-alt" : "expand-alt"}`} />
+          </button>
+        )}
       </div>
     </div>
   );
