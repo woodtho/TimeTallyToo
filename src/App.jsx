@@ -323,6 +323,9 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [expandedLists, setExpandedLists] = useState({});
+  // Share-card modal: { scope: "overall" | listName }
+  const [shareTarget, setShareTarget] = useState(null);
+  const shareCanvasRef = useRef(null);
   const [startPulse, setStartPulse] = useState(false);   // start-button ring animation
   const [newTaskId, setNewTaskId] = useState(null);       // slide-in for just-added task
   const [skipAnim, setSkipAnim] = useState(null);         // { from, to } for skip swipe
@@ -442,6 +445,12 @@ export default function App() {
       drawTimerCanvas();
     }
   });
+
+  /* Repaint share-card canvas whenever target / theme / stats change. */
+  useEffect(() => {
+    if (!shareTarget) return;
+    drawShareCard(shareCanvasRef.current, shareTarget);
+  }, [shareTarget, state.dark, state.listStats, state.listOrder, state.lists]);
 
   /* Persist (debounced) + cross-tab broadcast.
      State is carried directly in the BC message — no race with the debounced LS write. */
@@ -730,6 +739,269 @@ export default function App() {
 
   function resetCurrentListStats() {
     patch((n) => { n.listStats[n.currentList] = defaultListStats(); });
+  }
+
+  /* ───────────────────────── Share-card image generation ─────────────────────────
+     Renders a 1080×1350 portrait Instagram-friendly card from a stats target
+     (either "overall" or a list name). Drawing is a pure function of inputs +
+     theme, so calling this in an effect when shareTarget changes produces a
+     stable preview the user can download or hand to navigator.share().
+  */
+  function _shareStatsForTarget(target) {
+    // Returns a normalised stats record for whichever scope was selected
+    if (target === "overall") {
+      const headline = "All Lists";
+      const sub = `${state.listOrder.length} list${state.listOrder.length !== 1 ? "s" : ""}`;
+      return { headline, sub, ...allStats };
+    }
+    const ls = { ...defaultListStats(), ...(state.listStats?.[target] || {}) };
+    const taskCount = (state.lists[target] || []).length;
+    return { headline: target, sub: `${taskCount} task${taskCount !== 1 ? "s" : ""}`, ...ls };
+  }
+
+  function drawShareCard(canvas, target) {
+    if (!canvas) return;
+    const W = 1080, H = 1350;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    const dark = !!stateRef.current.dark;
+    const data = _shareStatsForTarget(target);
+
+    // ── Palette ────────────────────────────────────────────────
+    const bgTop      = dark ? "#0f1922" : "#e3f2fd";
+    const bgBot      = dark ? "#1e3a5f" : "#bbdefb";
+    const card       = dark ? "#1e1e1e" : "#ffffff";
+    const cardBorder = dark ? "#2f2f2f" : "#e0e0e0";
+    const accent     = "#2196f3";
+    const accentDim  = dark ? "#90caf9" : "#1976d2";
+    const text       = dark ? "#f0f0f0" : "#212121";
+    const textSub    = dark ? "#bbbbbb" : "#666666";
+    const tileBg     = dark ? "#2a2a2a" : "#f5f7fa";
+    const tileBorder = dark ? "#3a3a3c" : "#e6e9ef";
+
+    // ── Background gradient ────────────────────────────────────
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, bgTop);
+    grad.addColorStop(1, bgBot);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative blurry circles for visual interest
+    ctx.save();
+    ctx.globalAlpha = dark ? 0.12 : 0.18;
+    ctx.fillStyle = accent;
+    ctx.beginPath(); ctx.arc(W * 0.85, H * 0.12, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W * 0.10, H * 0.92, 320, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // ── Brand strip (top) ──────────────────────────────────────
+    ctx.fillStyle = text;
+    ctx.font = "700 44px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    // Brand mark — small blue rounded square + wordmark, like an app icon
+    const brandX = 80, brandY = 110;
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.roundRect(brandX, brandY - 30, 60, 60, 14);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 36px 'Courier New', Courier, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("T", brandX + 30, brandY + 2);
+
+    ctx.fillStyle = text;
+    ctx.font = "800 42px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("TimeTally", brandX + 80, brandY);
+
+    // Date in top right
+    const dateStr = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+    ctx.font = "500 26px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.fillStyle = textSub;
+    ctx.textAlign = "right";
+    ctx.fillText(dateStr, W - 80, brandY);
+
+    // ── Main card ──────────────────────────────────────────────
+    const cardX = 60, cardY = 200, cardW = W - 120, cardH = 1020;
+    ctx.save();
+    ctx.shadowColor = dark ? "rgba(0,0,0,0.55)" : "rgba(33, 150, 243, 0.18)";
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 10;
+    ctx.fillStyle = card;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 28);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = cardBorder;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(cardX + 1, cardY + 1, cardW - 2, cardH - 2, 28);
+    ctx.stroke();
+
+    // Card eyebrow + title
+    ctx.fillStyle = accent;
+    ctx.font = "700 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("FOCUS STATS", W / 2, cardY + 70);
+
+    // Headline (list name) — auto-shrink if too long
+    let headlineSize = 76;
+    ctx.font = `800 ${headlineSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+    while (ctx.measureText(data.headline).width > cardW - 120 && headlineSize > 36) {
+      headlineSize -= 4;
+      ctx.font = `800 ${headlineSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+    }
+    ctx.fillStyle = text;
+    ctx.fillText(data.headline, W / 2, cardY + 150);
+
+    // Sub-line
+    ctx.fillStyle = textSub;
+    ctx.font = "500 28px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.fillText(data.sub, W / 2, cardY + 195);
+
+    // Divider
+    ctx.strokeStyle = cardBorder;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 80, cardY + 230);
+    ctx.lineTo(cardX + cardW - 80, cardY + 230);
+    ctx.stroke();
+
+    // ── Hero metric: Time worked ───────────────────────────────
+    const timeStr = _shareFormatTime(data.timeWorked || 0);
+    ctx.fillStyle = textSub;
+    ctx.font = "600 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("TIME FOCUSED", W / 2, cardY + 290);
+
+    ctx.fillStyle = accentDim;
+    ctx.font = "800 130px 'Courier New', Courier, monospace";
+    ctx.fillText(timeStr, W / 2, cardY + 420);
+
+    // ── 2×2 stat tiles ─────────────────────────────────────────
+    const tileGapX = 30;
+    const tileGapY = 30;
+    const tilesAreaY = cardY + 480;
+    const tilesAreaW = cardW - 100;
+    const tileW = (tilesAreaW - tileGapX) / 2;
+    const tileH = 200;
+    const tilesX = cardX + 50;
+
+    const tiles = [
+      { label: "Tasks done",  value: String(data.tasksCompleted || 0) },
+      { label: "Sessions",    value: String(data.sessionsCompleted || 0) },
+      { label: "Best streak", value: (data.bestStreak ? `${data.bestStreak}d` : "—") },
+      { label: "Longest",     value: _shareFormatTimeShort(data.longestSession || 0) },
+    ];
+
+    tiles.forEach((tile, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const tx = tilesX + col * (tileW + tileGapX);
+      const ty = tilesAreaY + row * (tileH + tileGapY);
+
+      // Tile bg
+      ctx.fillStyle = tileBg;
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tileW, tileH, 18);
+      ctx.fill();
+      ctx.strokeStyle = tileBorder;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(tx + 0.75, ty + 0.75, tileW - 1.5, tileH - 1.5, 18);
+      ctx.stroke();
+
+      // Value (auto-shrink)
+      let valSize = 84;
+      ctx.font = `800 ${valSize}px 'Courier New', Courier, monospace`;
+      while (ctx.measureText(tile.value).width > tileW - 40 && valSize > 36) {
+        valSize -= 4;
+        ctx.font = `800 ${valSize}px 'Courier New', Courier, monospace`;
+      }
+      ctx.fillStyle = accentDim;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(tile.value, tx + tileW / 2, ty + tileH / 2 - 10);
+
+      // Label
+      ctx.fillStyle = textSub;
+      ctx.font = "600 22px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillText(tile.label.toUpperCase(), tx + tileW / 2, ty + tileH - 32);
+    });
+
+    // ── Footer ─────────────────────────────────────────────────
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = textSub;
+    ctx.font = "500 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("timetally.ca", W / 2, H - 60);
+  }
+
+  function _shareFormatTime(seconds) {
+    // Long form for the hero — e.g. "12h 34m" or "5m 20s"
+    const s = Math.max(0, Math.floor(seconds || 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const r = s % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+    if (m > 0) return `${m}m ${String(r).padStart(2, "0")}s`;
+    return `${r}s`;
+  }
+  function _shareFormatTimeShort(seconds) {
+    // Compact for tiles — e.g. "2h 5m", "45m", "30s"
+    const s = Math.max(0, Math.floor(seconds || 0));
+    if (!s) return "—";
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
+  }
+
+  async function shareCardImage() {
+    const canvas = shareCanvasRef.current;
+    if (!canvas) return;
+    const fileName = `timetally-${(shareTarget === "overall" ? "overall" : shareTarget).replace(/[^\w-]+/g, "-")}-${new Date().toISOString().slice(0, 10)}.png`;
+    // Try Web Share API with files (mobile)
+    canvas.toBlob(async (blob) => {
+      if (!blob) { showIoStatus("error", "Could not create image."); return; }
+      const file = new File([blob], fileName, { type: "image/png" });
+      try {
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "TimeTally stats",
+            text: "My focus stats from TimeTally",
+          });
+          return;
+        }
+      } catch {
+        // user cancelled or share denied; fall through to download
+      }
+      // Fallback: trigger download
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), { href: url, download: fileName });
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showIoStatus("success", "Image saved.");
+    }, "image/png");
+  }
+
+  function downloadShareCard() {
+    const canvas = shareCanvasRef.current;
+    if (!canvas) return;
+    const fileName = `timetally-${(shareTarget === "overall" ? "overall" : shareTarget).replace(/[^\w-]+/g, "-")}-${new Date().toISOString().slice(0, 10)}.png`;
+    canvas.toBlob((blob) => {
+      if (!blob) { showIoStatus("error", "Could not create image."); return; }
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), { href: url, download: fileName });
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showIoStatus("success", "Image saved.");
+    }, "image/png");
   }
 
   const etaText = useMemo(() => {
@@ -1934,6 +2206,15 @@ export default function App() {
               <SC icon="fa-star"           value={formatStreak(allStats.bestStreak)} label="Best streak" />
               <SC icon="fa-medal"          value={mostActiveList} label="Most active" small />
             </div>
+            <div className="stats-share-row">
+              <button
+                className="stats-share-btn"
+                onClick={() => setShareTarget("overall")}
+                title="Share overall stats as an image"
+              >
+                <i className="fas fa-share-nodes" /> Share overall stats
+              </button>
+            </div>
           </div>
 
           {/* ── Per-list accordion ────────────────────── */}
@@ -1972,10 +2253,17 @@ export default function App() {
                       </div>
                       <div className="stats-accordion-footer">
                         <button
+                          className="stats-share-btn stats-share-btn--inline"
+                          onClick={() => setShareTarget(listName)}
+                          title={`Share ${listName} stats as an image`}
+                        >
+                          <i className="fas fa-share-nodes" /> Share
+                        </button>
+                        <button
                           className="stats-reset-btn"
                           onClick={() => patch((n) => { n.listStats[listName] = defaultListStats(); })}
                         >
-                          Reset stats for this list
+                          Reset stats
                         </button>
                       </div>
                     </div>
@@ -1985,6 +2273,54 @@ export default function App() {
             })}
           </div>
 
+        </div>
+      </div>
+    )}
+
+    {/* Share-card modal — preview + download/share */}
+    {shareTarget && (
+      <div
+        className={`share-modal-backdrop${state.dark ? " dark-mode" : ""}`}
+        onClick={(e) => { if (e.target === e.currentTarget) setShareTarget(null); }}
+      >
+        <div className="share-modal">
+          <div className="share-modal-header">
+            <span className="share-modal-title">Share stats</span>
+            <button
+              className="options-close-button"
+              onClick={() => setShareTarget(null)}
+              aria-label="Close"
+            >
+              <i className="fas fa-xmark" />
+            </button>
+          </div>
+          <div className="share-modal-body">
+            <p className="share-modal-hint">
+              Sized for Instagram (1080 × 1350). Tap Share to post directly or
+              save the image to your device.
+            </p>
+            <div className="share-canvas-frame">
+              <canvas ref={shareCanvasRef} className="share-canvas" />
+            </div>
+            <div className="share-modal-actions">
+              {typeof navigator !== "undefined" && navigator.canShare && (
+                <button
+                  className="data-action-btn data-action-btn--primary"
+                  onClick={shareCardImage}
+                >
+                  <i className="fas fa-share-nodes" />
+                  <span>Share…</span>
+                </button>
+              )}
+              <button
+                className="data-action-btn data-action-btn--secondary"
+                onClick={downloadShareCard}
+              >
+                <i className="fas fa-download" />
+                <span>Download PNG</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     )}
