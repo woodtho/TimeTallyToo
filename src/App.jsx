@@ -385,6 +385,20 @@ export default function App() {
   /* Keep voicesRef current so timer callbacks never use stale closures */
   useEffect(() => { voicesRef.current = voices; }, [voices]);
 
+  /* Resume YouTube when screen unlocks (page becomes visible again).
+     We do this here rather than in the video's onPause handler because
+     YouTube auto-pauses when the page is hidden — sending play while
+     still hidden causes a start-then-immediately-stop flicker. */
+  useEffect(() => {
+    function onVisibility() {
+      if (!document.hidden && timerRef.current) {
+        playYouTubeIfAny(stateRef.current.currentTaskIndex);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* Keep PiP overlays in sync with current timer state */
   useEffect(() => {
     // Document PiP (desktop Chrome)
@@ -1277,32 +1291,84 @@ export default function App() {
     const W = canvas.width, H = canvas.height;
     const dark = stateRef.current.dark;
 
-    ctx.fillStyle = dark ? "#1e1e1e" : "#f0f0f0";
+    // Palette — exact values from the main app's CSS
+    const bg          = dark ? "#1e1e1e" : "#fafafa";
+    const sectionBg   = dark ? "#2a2a2a" : "#ffffff";
+    const borderColor = dark ? "#444"    : "#ccc";
+    const trackColor  = dark ? "#333"    : "#ddd";
+    const barRunning  = dark ? "#76c7c0" : "#4caf50"; // matches .progress-bar colors
+    const barPaused   = dark ? "#555"    : "#bbb";
+    const timerColor  = dark ? "#90caf9" : "#2196f3"; // matches .timer-remaining
+    const labelColor  = dark ? "#eee"    : "#333";    // matches .timer-task-name
+    const subtleColor = dark ? "#777"    : "#888";
+    const ytColor     = dark ? "#ff5252" : "#c62828";
+
+    // Background
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Progress bar
-    const pct = Math.min(Math.max(progress, 0), 100);
-    ctx.fillStyle = dark ? "#333" : "#ddd";
-    ctx.fillRect(0, 0, W, 5);
-    ctx.fillStyle = isRunning ? "#4caf50" : "#9e9e9e";
-    ctx.fillRect(0, 0, W * pct / 100, 5);
+    // Inner card
+    const PAD = 8;
+    ctx.fillStyle = sectionBg;
+    ctx.beginPath();
+    ctx.roundRect(PAD, PAD, W - PAD * 2, H - PAD * 2, 8);
+    ctx.fill();
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
-    // Task name / YouTube badge
+    // Progress bar (10px, rounded, clipped inside card)
+    const BAR_Y = PAD + 1, BAR_H = 10;
+    const pct = Math.min(Math.max(progress, 0), 100) / 100;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(PAD, BAR_Y, W - PAD * 2, BAR_H, [8, 8, 0, 0]);
+    ctx.clip();
+    ctx.fillStyle = trackColor;
+    ctx.fillRect(PAD, BAR_Y, W - PAD * 2, BAR_H);
+    ctx.fillStyle = isRunning ? barRunning : barPaused;
+    ctx.fillRect(PAD, BAR_Y, (W - PAD * 2) * pct, BAR_H);
+    ctx.restore();
+
+    // Task name (13px bold — matches .timer-task-name)
     const rawName = currentTask?.name ?? "";
-    const isYT = rawName.match(/^https?:\/\//);
-    const taskLabel = isYT ? "▶ YouTube" : (rawName || "Ready");
-    ctx.fillStyle = isYT ? (dark ? "#ff6060" : "#cc0000") : (dark ? "#9e9e9e" : "#757575");
-    ctx.font = `${isYT ? "bold " : ""}14px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+    const isYT = !!rawName.match(/^https?:\/\//);
+    ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
     ctx.textBaseline = "top";
-    let label = taskLabel;
-    while (ctx.measureText(label + "…").width > W - 20 && label.length > 1) label = label.slice(0, -1);
-    ctx.fillText(label === taskLabel ? label : label + "…", 12, 14);
+    if (isYT) {
+      // Red YouTube pill badge
+      const badge = "▶ YouTube";
+      const bw = ctx.measureText(badge).width + 12;
+      ctx.fillStyle = ytColor;
+      ctx.beginPath();
+      ctx.roundRect(PAD + 6, BAR_Y + BAR_H + 6, bw, 17, 4);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.fillText(badge, PAD + 12, BAR_Y + BAR_H + 8);
+    } else {
+      const taskLabel = rawName || "Ready";
+      ctx.fillStyle = labelColor;
+      let label = taskLabel;
+      const maxW = W - PAD * 2 - 14;
+      while (label.length > 1 && ctx.measureText(label + "…").width > maxW) label = label.slice(0, -1);
+      ctx.fillText(label === taskLabel ? label : label + "…", PAD + 7, BAR_Y + BAR_H + 7);
+    }
 
-    // Timer
-    ctx.fillStyle = dark ? "#e0e0e0" : "#212121";
-    ctx.font = "bold 46px 'Courier New', Courier, monospace";
+    // Timer — 'Courier New' monospace, blue, matches .timer-remaining
+    const timerStr = formatHMS(timerDisplayTime);
+    ctx.font = "bold 44px 'Courier New', Courier, monospace";
+    ctx.fillStyle = isRunning ? timerColor : subtleColor;
     ctx.textBaseline = "middle";
-    ctx.fillText(formatHMS(timerDisplayTime), 10, H / 2 + 12);
+    ctx.fillText(timerStr, PAD + 6, H / 2 + 10);
+
+    // Paused label (bottom-right)
+    if (!isRunning) {
+      ctx.font = "11px -apple-system, sans-serif";
+      ctx.fillStyle = subtleColor;
+      ctx.textBaseline = "alphabetic";
+      const pausedW = ctx.measureText("⏸ Paused").width;
+      ctx.fillText("⏸ Paused", W - PAD - pausedW - 6, H - PAD - 8);
+    }
   }
 
   async function openVideoPiP() {
@@ -2431,15 +2497,14 @@ export default function App() {
       playsInline
       onPause={(e) => {
         // Resume only for screen-lock pauses, not user-intentional pauses.
-        // When the user pauses via the PiP controls, pauseTimer() clears
-        // timerRef *before* the pause event fires, so we can tell them apart.
+        // pauseTimer() nulls timerRef before the video pause fires, so
+        // timerRef.current === null means the user paused on purpose.
+        // YouTube is NOT re-played here because the page is still hidden
+        // when this fires — YouTube would immediately auto-pause again.
+        // visibilitychange (below) handles the YouTube resume on unlock.
         const hasLiveTrack = e.target.srcObject?.getTracks().some((t) => t.readyState === "live");
-        const timerRunning = !!timerRef.current;
-        if (hasLiveTrack && timerRunning && document.pictureInPictureElement === e.target) {
+        if (hasLiveTrack && !!timerRef.current && document.pictureInPictureElement === e.target) {
           e.target.play().catch(() => {});
-          // Also nudge YouTube back to playing if screen just woke up
-          const s = stateRef.current;
-          playYouTubeIfAny(s.currentTaskIndex);
         }
       }}
       style={{ position: "fixed", left: "-9999px", top: "-9999px", width: 1, height: 1 }}
