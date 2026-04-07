@@ -2050,6 +2050,35 @@ header {
   color: #666;
 }
 
+/* ── Buy Me a Coffee button ── */
+.help-footer {
+  flex-wrap: wrap;
+}
+.help-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.bmc-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.bmc-img {
+  height: 28px;
+  width: auto;
+  display: block;
+  border-radius: 6px;
+}
+/* Light mode: show light button, hide dark */
+.bmc-img--dark { display: none; }
+.bmc-img--light { display: block; }
+/* Dark mode: show dark button, hide light */
+.options-overlay.dark-mode .bmc-img--light { display: none; }
+.options-overlay.dark-mode .bmc-img--dark  { display: block; }
+
 /* Help Menu */
 .help-menu {
   display: none;
