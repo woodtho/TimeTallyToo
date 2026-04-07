@@ -373,6 +373,7 @@ a.header-overflow-item { text-decoration: none; }
   padding: 36px 48px;
   text-align: center;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  pointer-events: auto;
   animation: celebrateIn 0.3s ease-out both;
 }
 .list-complete-overlay.dark-mode .list-complete-card {
