@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AuDHD Timer – Free Flexible Focus Timer for Autistic + ADHD Brains | TimeTally</title>
+  <meta name="description" content="A free AuDHD-friendly timer with predictable structure, live session ETA, audio cues, and custom intervals. No surprises, no rigid 25-minute blocks, no account needed." />
+  <link rel="canonical" href="https://timetally.ca/audhd-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="AuDHD Timer – Free Flexible Focus Timer for Autistic + ADHD Brains" />
+  <meta property="og:description" content="Predictable structure, live ETA, audio cues, custom intervals. No surprises, no rigid blocks, no account." />
+  <meta property="og:url" content="https://timetally.ca/audhd-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AuDHD Timer – Free Flexible Focus Timer for Autistic + ADHD Brains" />
+  <meta name="twitter:description" content="Predictable structure, live ETA, audio cues, custom intervals. No surprises, no rigid blocks, no account." />
+  <meta name="twitter:image" content="https://timetally.ca/img/playstore.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6339713711659896" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2196f3; --blue-dark: #1565c0; --blue-light: #e3f2fd;
+      --purple: #6a1b9a; --purple-mid: #8e24aa; --purple-light: #f3e5f5;
+      --text: #1a1a2e; --text-sub: #555; --border: #e0e0e0; --bg: #f8fafd; --white: #ffffff; --green: #43a047; --red: #e53935;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 17px; }
+    .nav-logo { width: 30px; height: 30px; border-radius: 7px; display: block; }
+    .nav-cta { background: var(--purple-mid); color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+    .nav-cta:hover { background: var(--purple); }
+    .hero { background: linear-gradient(160deg, var(--purple-light) 0%, var(--white) 55%); padding: 56px 24px 0; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--purple-light); color: var(--purple-mid); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.7px; margin-bottom: 16px; }
+    h1 em { font-style: normal; color: var(--purple-mid); }
+    .hero-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 28px; max-width: 480px; }
+    .hero-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .hero-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: var(--text-sub); }
+    .hero-bullets li i { color: var(--purple-mid); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--purple-mid); color: #fff; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { background: var(--purple); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-sub); padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: var(--purple-mid); color: var(--purple-mid); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .hero-demo { position: relative; align-self: stretch; }
+    .browser-frame { border-radius: 12px 12px 0 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08); height: 100%; min-height: 560px; display: flex; flex-direction: column; }
+    .browser-chrome { background: #f0f0f0; border-bottom: 1px solid #d0d0d0; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar { flex: 1; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .browser-urlbar i { color: var(--green); font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; background: transparent; cursor: pointer; text-decoration: none; }
+    .browser-overlay-pill { background: rgba(106,27,154,0.9); color: #fff; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; padding: 9px 20px; border-radius: 24px; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.15s, transform 0.1s; }
+    .browser-overlay:hover .browser-overlay-pill { background: var(--purple); transform: translateY(-2px); }
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label { text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: var(--purple-mid); margin-bottom: 12px; }
+    h2 { font-size: clamp(22px, 3.5vw, 34px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 14px; }
+    .section-intro { font-size: 17px; color: var(--text-sub); margin-bottom: 48px; max-width: 620px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: box-shadow 0.15s, transform 0.15s; }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(142,36,170,0.1); transform: translateY(-2px); }
+    .feature-icon { width: 44px; height: 44px; background: var(--purple-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--purple-mid); font-size: 18px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .bottom-cta { background: linear-gradient(135deg, #4a148c 0%, #8e24aa 100%); padding: 72px 24px; text-align: center; color: #fff; }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p { color: rgba(255,255,255,0.75); font-size: 17px; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: #fff; color: var(--purple); padding: 14px 32px; border-radius: 10px; font-size: 17px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-white:hover { background: var(--purple-light); transform: translateY(-1px); }
+    footer { background: #f0f2f5; padding: 28px 24px; text-align: center; font-size: 13px; color: #888; }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .hero-inner { grid-template-columns: 1fr; } .hero-text { padding-bottom: 0; } .browser-frame { min-height: 480px; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/?start=work">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-infinity"></i> AuDHD-Friendly Timer</div>
+        <h1>A focus timer with<br><em>no surprises and no rigid rules.</em></h1>
+        <p class="hero-sub">Predictable structure, live finish-time ETA, audio cues for transitions, and the flexibility to set any interval length — built for brains that need both structure and control.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> See your full session plan before you start — no surprises</li>
+          <li><i class="fas fa-check"></i> Live ETA — always know when you'll be done</li>
+          <li><i class="fas fa-check"></i> Audio announces each task — smooth, predictable transitions</li>
+          <li><i class="fas fa-check"></i> Any interval length — set what works for you, not a default</li>
+          <li><i class="fas fa-check"></i> Your data never leaves your browser — no accounts, no servers</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing now</a>
+          <a class="btn-ghost" href="#features">How it helps ↓</a>
+        </div>
+        <p class="hero-note">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+      </div>
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar"><i class="fas fa-lock"></i> timetally.ca</div>
+          </div>
+          <div class="browser-body">
+            <iframe src="/?demo=work" title="TimeTally — AuDHD timer demo" loading="lazy"></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill"><i class="fas fa-arrow-up-right-from-square"></i> Open full app</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="features">
+    <div class="container">
+      <p class="section-label">Designed for AuDHD needs</p>
+      <h2>Structure that bends — not breaks</h2>
+      <p class="section-intro">AuDHD means needing both structure and flexibility at the same time. TimeTally gives you both.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-eye"></i></div>
+          <h3>See the whole plan upfront</h3>
+          <p>Every task is listed before you start. No hidden transitions, no unexpected items. You know exactly what's coming and in what order — before you commit to starting.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-clock"></i></div>
+          <h3>Live finish-time ETA</h3>
+          <p>Time blindness affects both ADHD and autism. The real-time "Done at 4:15 PM" anchor makes time concrete — not abstract minutes counting down.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Predictable audio transitions</h3>
+          <p>A voice announces each task by name when it starts. No sudden beeps, no jarring alarms — a calm, expected audio cue that signals the transition before you feel it.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-sliders"></i></div>
+          <h3>Your intervals, your rules</h3>
+          <p>Set each task to exactly the duration you need. 7 minutes, 45 minutes, 12 minutes. No app-imposed blocks that clash with your natural focus rhythm.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-lock"></i></div>
+          <h3>Zero data collection</h3>
+          <p>Your task lists live entirely in your browser. Nothing is sent to any server. No account creation, no privacy tradeoffs, no unexpected changes to your data.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-forward-step"></i></div>
+          <h3>Automatic task progression</h3>
+          <p>When one task ends, the next begins without you needing to do anything. Removes the executive function demand of deciding what to do next between every interval.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Structure and flexibility — at the same time.</h2>
+    <p>Free in your browser. No account. No surprises.</p>
+    <a class="btn-white" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing now</a>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.55);">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+  </section>
+
+  <section class="section section--alt" id="faq">
+    <div class="container" style="max-width:760px;">
+      <p class="section-label">FAQ</p>
+      <h2>Common questions</h2>
+      <div style="margin-top:32px;display:flex;flex-direction:column;gap:20px;">
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">What is AuDHD? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">AuDHD refers to people who are both autistic and have ADHD. The combination often creates a push-pull between the autistic need for predictable structure and the ADHD need for flexible stimulation. Productivity tools that are rigid or unpredictable often fail this community.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I see my full session plan before starting? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. All tasks are visible in the list at all times — their names, durations, and order. You know everything that's coming before you press play.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I turn off the audio announcements? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Text-to-speech and sound effects are toggleable in settings. If you prefer a silent visual timer, turn off audio entirely — all the other features still work.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Is TimeTally free? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes, completely. No account, no premium tier, no time limits. Every feature works immediately in your browser.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "What is AuDHD?", "acceptedAnswer": { "@type": "Answer", "text": "AuDHD refers to people who are both autistic and have ADHD. The combination often creates a push-pull between the autistic need for predictable structure and the ADHD need for flexible stimulation." } },
+      { "@type": "Question", "name": "Can I see my full session plan before starting?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. All tasks are visible in the list at all times — their names, durations, and order. You know everything that's coming before you press play." } },
+      { "@type": "Question", "name": "Is TimeTally free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely. No account, no premium tier, no time limits. Every feature works immediately in your browser." } }
+    ]
+  }
+  </script>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/adhd-timer/">ADHD Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/pomodoro-timer/">Pomodoro Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/privacy/">Privacy</a>
+    </p>
+    <p style="margin-top:12px;color:#888;max-width:520px;margin-left:auto;margin-right:auto;">
+      Built by Thomas, a solo developer in Canada. TimeTally has been actively maintained since 2024 and will always be free. <a href="https://github.com/woodtho/TimeTallyToo" style="color:#2196f3;">View on GitHub</a>
+    </p>
+    <p style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <span style="color:#888;">© 2025 TimeTally &nbsp;·&nbsp; Free AuDHD-friendly focus timer</span>
+      <a href="https://www.buymeacoffee.com/timetally_ca" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=%E2%8F%B2%EF%B8%8F&slug=timetally_ca&button_colour=8E24AA&font_colour=ffffff&font_family=Inter&outline_colour=6A1B9A&coffee_colour=FFDD00" alt="Buy me a coffee" style="height:32px;width:auto;border-radius:6px;" />
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

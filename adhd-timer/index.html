@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADHD Timer – Free Flexible Pomodoro for ADHD Brains | TimeTally</title>
+  <meta name="description" content="A free ADHD-friendly timer that bends to your brain. Custom intervals, live session ETA to fight time blindness, audio task cues, and no rigid 25-minute blocks. No account needed." />
+  <link rel="canonical" href="https://timetally.ca/adhd-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ADHD Timer – Free Flexible Pomodoro for ADHD Brains" />
+  <meta property="og:description" content="Custom intervals, live ETA to fight time blindness, audio cues, no rigid blocks. Free in any browser, no account." />
+  <meta property="og:url" content="https://timetally.ca/adhd-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ADHD Timer – Free Flexible Pomodoro for ADHD Brains" />
+  <meta name="twitter:description" content="Custom intervals, live ETA to fight time blindness, audio cues, no rigid blocks. Free in any browser, no account." />
+  <meta name="twitter:image" content="https://timetally.ca/img/playstore.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6339713711659896" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2196f3; --blue-dark: #1565c0; --blue-light: #e3f2fd;
+      --teal: #00796b; --teal-mid: #009688; --teal-light: #e0f2f1;
+      --text: #1a1a2e; --text-sub: #555; --border: #e0e0e0; --bg: #f8fafd; --white: #ffffff; --green: #43a047; --red: #e53935;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 17px; }
+    .nav-logo { width: 30px; height: 30px; border-radius: 7px; display: block; }
+    .nav-cta { background: var(--teal); color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+    .nav-cta:hover { background: var(--teal); filter: brightness(0.9); }
+    .hero { background: linear-gradient(160deg, var(--teal-light) 0%, var(--white) 55%); padding: 56px 24px 0; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--teal-light); color: var(--teal); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.7px; margin-bottom: 16px; }
+    h1 em { font-style: normal; color: var(--teal-mid); }
+    .hero-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 28px; max-width: 480px; }
+    .hero-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .hero-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: var(--text-sub); }
+    .hero-bullets li i { color: var(--teal-mid); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--teal); color: #fff; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { filter: brightness(0.9); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-sub); padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .hero-demo { position: relative; align-self: stretch; }
+    .browser-frame { border-radius: 12px 12px 0 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08); height: 100%; min-height: 560px; display: flex; flex-direction: column; }
+    .browser-chrome { background: #f0f0f0; border-bottom: 1px solid #d0d0d0; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar { flex: 1; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .browser-urlbar i { color: var(--teal); font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; background: transparent; cursor: pointer; text-decoration: none; }
+    .browser-overlay-pill { background: rgba(0,121,107,0.9); color: #fff; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; padding: 9px 20px; border-radius: 24px; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.15s, transform 0.1s; }
+    .browser-overlay:hover .browser-overlay-pill { filter: brightness(0.9); transform: translateY(-2px); }
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label { text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: var(--teal); margin-bottom: 12px; }
+    h2 { font-size: clamp(22px, 3.5vw, 34px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 14px; }
+    .section-intro { font-size: 17px; color: var(--text-sub); margin-bottom: 48px; max-width: 620px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+    .step { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--teal-light); color: var(--teal); font-weight: 800; font-size: 16px; border-radius: 8px; margin-bottom: 12px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: box-shadow 0.15s, transform 0.15s; }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(0,150,136,0.12); transform: translateY(-2px); }
+    .feature-icon { width: 44px; height: 44px; background: var(--teal-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--teal); font-size: 18px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .bottom-cta { background: linear-gradient(135deg, #004d40 0%, #00796b 100%); padding: 72px 24px; text-align: center; color: #fff; }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p { color: rgba(255,255,255,0.75); font-size: 17px; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: #fff; color: var(--teal); padding: 14px 32px; border-radius: 10px; font-size: 17px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-white:hover { background: var(--teal-light); transform: translateY(-1px); }
+    footer { background: #f0f2f5; padding: 28px 24px; text-align: center; font-size: 13px; color: #888; }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .hero-inner { grid-template-columns: 1fr; } .hero-text { padding-bottom: 0; } .browser-frame { min-height: 480px; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/?start=work">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-brain"></i> ADHD-Friendly Timer</div>
+        <h1>A Pomodoro timer that<br><em>works for ADHD brains.</em></h1>
+        <p class="hero-sub">No rigid 25-minute blocks. Set any duration for any task, see exactly when you'll be done, and get an audio cue the moment each task starts — so your focus can stay on your work.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Any task duration — 7 minutes, 45 minutes, 2 hours</li>
+          <li><i class="fas fa-check"></i> Live ETA fights time blindness — always know when you'll finish</li>
+          <li><i class="fas fa-check"></i> Voice announces each task at the start — no screen-checking</li>
+          <li><i class="fas fa-check"></i> Auto-advances through your list without you touching anything</li>
+          <li><i class="fas fa-check"></i> Free, no account, runs in your browser right now</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing now</a>
+          <a class="btn-ghost" href="#features">See how it helps ↓</a>
+        </div>
+        <p class="hero-note">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+      </div>
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar"><i class="fas fa-lock"></i> timetally.ca</div>
+          </div>
+          <div class="browser-body">
+            <iframe src="/?demo=work" title="TimeTally — ADHD timer demo" loading="lazy"></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill"><i class="fas fa-arrow-up-right-from-square"></i> Open full app</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="features">
+    <div class="container">
+      <p class="section-label">Built for how ADHD brains work</p>
+      <h2>Features that address real ADHD challenges</h2>
+      <p class="section-intro">Most timers are built for neurotypical work patterns. TimeTally is flexible enough to fit yours.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-clock"></i></div>
+          <h3>Live finish-time ETA</h3>
+          <p>Time blindness is real. TimeTally shows "Done at 3:42 PM" the moment you start — so you always have an anchor to the present instead of an abstract countdown.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-sliders"></i></div>
+          <h3>Any interval length</h3>
+          <p>25 minutes doesn't work for everyone. Set tasks to 10 minutes, 45 minutes, or 7 minutes. Your session, your rhythm — no app telling you how long to focus.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Audio task announcements</h3>
+          <p>Hear each task name announced by voice when it starts. Eliminates the distraction of checking a timer — and the transition anxiety of not knowing what's next.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-forward-step"></i></div>
+          <h3>Auto-advance</h3>
+          <p>When one task ends, the next begins automatically. No clicking to continue — removing the moment where ADHD derails a session between tasks.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-list-check"></i></div>
+          <h3>Your tasks, named clearly</h3>
+          <p>Label every task exactly what it is — "Write intro paragraph," "Email Dr. Kim," "10-min walk." Named tasks reduce decision fatigue when transitioning.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Separate tabs per context</h3>
+          <p>Keep Work, Study, and Chores as separate saved lists. Context-switch without rebuilding your whole routine every time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">How to use it</p>
+      <h2>Build an ADHD-friendly session in 2 minutes</h2>
+      <p class="section-intro">No templates, no onboarding, no app to install. Just your tasks and a timer.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Name your tasks</h3><p>Type what you're actually doing — "Focus: project X," "Break: walk," "Admin: emails." Specific names reduce the switching cost between tasks.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Set your own durations</h3><p>Give each task the time that matches your energy. 15 minutes for hard focus, 5 for a break, 20 for admin. No rigid blocks.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>See when you'll be done</h3><p>The live ETA appears immediately. You know before you start: "This session ends at 4:15." That's your anchor against time blindness.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Let it run</h3><p>Audio announces each task. The timer advances automatically. You stay in flow without having to manage the timer itself.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Your timer. Your intervals. Your brain.</h2>
+    <p>Open TimeTally now — no sign-up, no download, no rigid Pomodoro blocks.</p>
+    <a class="btn-white" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing now</a>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.55);">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+  </section>
+
+  <section class="section section--alt" id="faq">
+    <div class="container" style="max-width:760px;">
+      <p class="section-label">FAQ</p>
+      <h2>Common questions</h2>
+      <div style="margin-top:32px;display:flex;flex-direction:column;gap:20px;">
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Why is the standard Pomodoro (25/5) hard for ADHD? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">The 25-minute block is arbitrary — ADHD brains often hyperfocus for longer or need shorter windows depending on medication timing, energy, and task type. A timer that forces you out of flow at 25 minutes can be more disruptive than helpful. TimeTally lets you set each task to whatever duration actually fits.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">How does the ETA help with time blindness? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Instead of a countdown that only tells you how many minutes remain in one task, TimeTally shows the wall-clock time you'll finish your whole session — "Done at 4:30 PM." That connects the abstract timer to real time, which is exactly what ADHD time blindness disrupts.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Is TimeTally free? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes, completely. No account, no premium tier, no time limits. Every feature works immediately in your browser.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I save my routine for next time? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Your task lists save automatically in your browser. Install TimeTally as a PWA and your saved routines are one tap away — no login, no sync, no friction.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Why is the standard Pomodoro (25/5) hard for ADHD?", "acceptedAnswer": { "@type": "Answer", "text": "The 25-minute block is arbitrary — ADHD brains often hyperfocus for longer or need shorter windows. TimeTally lets you set each task to whatever duration actually fits." } },
+      { "@type": "Question", "name": "How does the ETA help with time blindness?", "acceptedAnswer": { "@type": "Answer", "text": "TimeTally shows the wall-clock time you'll finish your whole session — 'Done at 4:30 PM' — connecting the abstract timer to real time, which is exactly what time blindness disrupts." } },
+      { "@type": "Question", "name": "Is TimeTally free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely. No account, no premium tier, no time limits. Every feature works immediately in your browser." } }
+    ]
+  }
+  </script>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/audhd-timer/">AuDHD Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/pomodoro-timer/">Pomodoro Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/privacy/">Privacy</a>
+    </p>
+    <p style="margin-top:12px;color:#888;max-width:520px;margin-left:auto;margin-right:auto;">
+      Built by Thomas, a solo developer in Canada. TimeTally has been actively maintained since 2024 and will always be free. <a href="https://github.com/woodtho/TimeTallyToo" style="color:#2196f3;">View on GitHub</a>
+    </p>
+    <p style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <span style="color:#888;">© 2025 TimeTally &nbsp;·&nbsp; Free ADHD-friendly interval timer</span>
+      <a href="https://www.buymeacoffee.com/timetally_ca" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=%E2%8F%B2%EF%B8%8F&slug=timetally_ca&button_colour=009688&font_colour=ffffff&font_family=Inter&outline_colour=00796B&coffee_colour=FFDD00" alt="Buy me a coffee" style="height:32px;width:auto;border-radius:6px;" />
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

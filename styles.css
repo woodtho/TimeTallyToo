@@ -1693,6 +1693,7 @@ header {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.15s, transform 0.05s;
 }
 .data-action-btn:active {

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chore Timer – Timed Cleaning Schedule That Tells You When You're Done | TimeTally</title>
+  <meta name="description" content="Free chore timer that turns your cleaning list into a timed session. Set minutes per chore, see exactly when you'll be done, and hear each chore announced. No account needed." />
+  <link rel="canonical" href="https://timetally.ca/chore-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Chore Timer – Timed Cleaning Schedule That Tells You When You're Done" />
+  <meta property="og:description" content="Set time per chore, see your finish time upfront, hear each chore called out. Free in any browser, no account." />
+  <meta property="og:url" content="https://timetally.ca/chore-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Chore Timer – Timed Cleaning Schedule That Tells You When You're Done" />
+  <meta name="twitter:description" content="Set time per chore, see your finish time upfront, hear each chore called out. Free in any browser, no account." />
+  <meta name="twitter:image" content="https://timetally.ca/img/playstore.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6339713711659896" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2196f3; --blue-dark: #1565c0; --blue-light: #e3f2fd;
+      --amber: #e65100; --amber-mid: #f57c00; --amber-light: #fff3e0;
+      --text: #1a1a2e; --text-sub: #555; --border: #e0e0e0; --bg: #f8fafd; --white: #ffffff; --green: #43a047; --red: #e53935;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 17px; }
+    .nav-logo { width: 30px; height: 30px; border-radius: 7px; display: block; }
+    .nav-cta { background: var(--amber-mid); color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+    .nav-cta:hover { background: var(--amber); }
+    .hero { background: linear-gradient(160deg, var(--amber-light) 0%, var(--white) 55%); padding: 56px 24px 0; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--amber-light); color: var(--amber); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.7px; margin-bottom: 16px; }
+    h1 em { font-style: normal; color: var(--amber-mid); }
+    .hero-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 28px; max-width: 480px; }
+    .hero-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .hero-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: var(--text-sub); }
+    .hero-bullets li i { color: var(--green); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--amber-mid); color: #fff; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { background: var(--amber); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-sub); padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: var(--amber-mid); color: var(--amber-mid); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .hero-demo { position: relative; align-self: stretch; }
+    .browser-frame { border-radius: 12px 12px 0 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08); height: 100%; min-height: 560px; display: flex; flex-direction: column; }
+    .browser-chrome { background: #f0f0f0; border-bottom: 1px solid #d0d0d0; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar { flex: 1; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .browser-urlbar i { color: var(--green); font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; background: transparent; cursor: pointer; text-decoration: none; }
+    .browser-overlay-pill { background: rgba(230,81,0,0.9); color: #fff; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; padding: 9px 20px; border-radius: 24px; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.15s, transform 0.1s; }
+    .browser-overlay:hover .browser-overlay-pill { background: var(--amber); transform: translateY(-2px); }
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label { text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: var(--amber-mid); margin-bottom: 12px; }
+    h2 { font-size: clamp(22px, 3.5vw, 34px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 14px; }
+    .section-intro { font-size: 17px; color: var(--text-sub); margin-bottom: 48px; max-width: 620px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+    .step { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--amber-light); color: var(--amber); font-weight: 800; font-size: 16px; border-radius: 8px; margin-bottom: 12px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: box-shadow 0.15s, transform 0.15s; }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(245,124,0,0.12); transform: translateY(-2px); }
+    .feature-icon { width: 44px; height: 44px; background: var(--amber-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--amber-mid); font-size: 18px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .bottom-cta { background: linear-gradient(135deg, #bf360c 0%, #f57c00 100%); padding: 72px 24px; text-align: center; color: #fff; }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p { color: rgba(255,255,255,0.8); font-size: 17px; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: #fff; color: var(--amber); padding: 14px 32px; border-radius: 10px; font-size: 17px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-white:hover { background: var(--amber-light); transform: translateY(-1px); }
+    footer { background: #f0f2f5; padding: 28px 24px; text-align: center; font-size: 13px; color: #888; }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .hero-inner { grid-template-columns: 1fr; } .hero-text { padding-bottom: 0; } .browser-frame { min-height: 480px; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/?start=chores">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-broom"></i> Free Chore Timer</div>
+        <h1>Chores with a timer —<br><em>and a finish time upfront.</em></h1>
+        <p class="hero-sub">Add each chore, set how many minutes it should take, and see exactly when you'll be done before you even start. Then let TimeTally call them out one by one.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Name each chore and set its time — 10 min dishes, 15 min vacuum</li>
+          <li><i class="fas fa-check"></i> See "Chores done by 11:45 AM" before you start</li>
+          <li><i class="fas fa-check"></i> Voice announces each chore as it begins</li>
+          <li><i class="fas fa-check"></i> Auto-advances — no phone touching between chores</li>
+          <li><i class="fas fa-check"></i> Free, no account, works on phone and desktop</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/?start=chores"><i class="fas fa-broom"></i> Build my chore timer</a>
+          <a class="btn-ghost" href="#how-it-works">How it works ↓</a>
+        </div>
+        <p class="hero-note">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+      </div>
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar"><i class="fas fa-lock"></i> timetally.ca</div>
+          </div>
+          <div class="browser-body">
+            <iframe src="/?demo=chores" title="TimeTally — chore timer demo" loading="lazy"></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill"><i class="fas fa-arrow-up-right-from-square"></i> Open full app</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="how-it-works">
+    <div class="container">
+      <p class="section-label">How it works</p>
+      <h2>Your chore list, timed and running in 2 minutes</h2>
+      <p class="section-intro">No app to install. No account. Just your chores and a timer.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Add your chores</h3><p>Type each task — "Dishes," "Vacuum living room," "Wipe counters," "Take out trash." Named exactly so you hear them called out clearly.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Set a time for each</h3><p>Give each chore the time it usually takes — 10 minutes for dishes, 15 for vacuuming. Be honest. The ETA is only useful if the times are real.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>See when you'll be done</h3><p>The live ETA shows immediately: "Chores done by 12:15 PM." Knowing the end point makes starting easier.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Start and let it run</h3><p>Each chore is announced by voice when it starts. When the timer ends, the next one begins automatically — no phone required.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2>Built for people who actually have to clean</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-clock"></i></div>
+          <h3>Finish-time ETA</h3>
+          <p>See exactly when you'll be done before starting. "All chores finished by 12:30 PM" — now you can plan what's after without guessing.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Voice chore announcements</h3>
+          <p>Each chore is called out by name when it starts. Put your phone down, go clean, and just listen for what's next.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-forward-step"></i></div>
+          <h3>Hands-free progression</h3>
+          <p>Chores advance automatically. No picking up your phone between tasks — especially useful when your hands are wet or you're carrying things.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-floppy-disk"></i></div>
+          <h3>Saved routines</h3>
+          <p>Save your chore list once and it's there every week. Add TimeTally to your home screen as a PWA and your routine is one tap away every Saturday morning.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Multiple lists</h3>
+          <p>Keep a "Morning chores" tab and a "Deep clean" tab separately. Switch between them without losing either routine.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-screen-button"></i></div>
+          <h3>Works on any device</h3>
+          <p>Phone, tablet, desktop — TimeTally runs in your browser. No app to install, no account required, free forever.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Know when chores end before they start.</h2>
+    <p>Free in your browser. Works on phone and desktop. No account needed.</p>
+    <a class="btn-white" href="https://timetally.ca/?start=chores"><i class="fas fa-broom"></i> Build my chore timer</a>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.65);">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+  </section>
+
+  <section class="section section--alt" id="faq">
+    <div class="container" style="max-width:760px;">
+      <p class="section-label">FAQ</p>
+      <h2>Common questions</h2>
+      <div style="margin-top:32px;display:flex;flex-direction:column;gap:20px;">
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I save my chore routine for next week? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Your chore list saves automatically in your browser. Install TimeTally as a PWA and your saved routine is one tap away every time — no login, no sync, no friction.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Does it work while my phone screen is off? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">The timer continues running in the background on most browsers. Text-to-speech announcements may require the screen to be on, depending on your device's browser and audio settings.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Is it free? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Completely free — no account, no premium tier, no time limits. Every feature works immediately in any browser.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can kids use it for their chore list? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. No account required, no sign-up, no personal information collected. Hand them a phone or tablet with the chore list already loaded and let them go.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Can I save my chore routine for next week?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Your chore list saves automatically in your browser. Install as a PWA and it's one tap away every time." } },
+      { "@type": "Question", "name": "Is it free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Completely free — no account, no premium tier, no time limits." } }
+    ]
+  }
+  </script>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/todo-timer/">Todo Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/workout-timer/">Workout Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/privacy/">Privacy</a>
+    </p>
+    <p style="margin-top:12px;color:#888;max-width:520px;margin-left:auto;margin-right:auto;">
+      Built by Thomas, a solo developer in Canada. TimeTally has been actively maintained since 2024 and will always be free. <a href="https://github.com/woodtho/TimeTallyToo" style="color:#2196f3;">View on GitHub</a>
+    </p>
+    <p style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <span style="color:#888;">© 2025 TimeTally &nbsp;·&nbsp; Free chore and household timer</span>
+      <a href="https://www.buymeacoffee.com/timetally_ca" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=%E2%8F%B2%EF%B8%8F&slug=timetally_ca&button_colour=F57C00&font_colour=ffffff&font_family=Inter&outline_colour=E65100&coffee_colour=FFDD00" alt="Buy me a coffee" style="height:32px;width:auto;border-radius:6px;" />
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

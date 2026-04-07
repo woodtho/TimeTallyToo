@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Todo Timer – Timed Task List with Live Finish-Time ETA | TimeTally</title>
+  <meta name="description" content="Turn your to-do list into a timed session. Add tasks, set durations, and see exactly when you'll be done. Free in any browser, no account needed." />
+  <link rel="canonical" href="https://timetally.ca/todo-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Todo Timer – Timed Task List with Live Finish-Time ETA" />
+  <meta property="og:description" content="Turn your to-do list into a timed session. Add tasks, set durations, see when you'll be done. Free in any browser." />
+  <meta property="og:url" content="https://timetally.ca/todo-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Todo Timer – Timed Task List with Live Finish-Time ETA" />
+  <meta name="twitter:description" content="Turn your to-do list into a timed session. Add tasks, set durations, see when you'll be done. Free in any browser." />
+  <meta name="twitter:image" content="https://timetally.ca/img/playstore.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6339713711659896" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2196f3; --blue-dark: #1565c0; --blue-light: #e3f2fd;
+      --text: #1a1a2e; --text-sub: #555; --border: #e0e0e0; --bg: #f8fafd; --white: #ffffff; --green: #43a047; --red: #e53935;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 17px; }
+    .nav-logo { width: 30px; height: 30px; border-radius: 7px; display: block; }
+    .nav-cta { background: var(--blue); color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+    .nav-cta:hover { background: var(--blue-dark); }
+    .hero { background: linear-gradient(160deg, var(--blue-light) 0%, var(--white) 55%); padding: 56px 24px 0; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-light); color: var(--blue-dark); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.7px; margin-bottom: 16px; }
+    h1 em { font-style: normal; color: var(--blue); }
+    .hero-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 28px; max-width: 480px; }
+    .hero-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .hero-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: var(--text-sub); }
+    .hero-bullets li i { color: var(--green); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--blue); color: #fff; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-sub); padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .hero-demo { position: relative; align-self: stretch; }
+    .browser-frame { border-radius: 12px 12px 0 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08); height: 100%; min-height: 560px; display: flex; flex-direction: column; }
+    .browser-chrome { background: #f0f0f0; border-bottom: 1px solid #d0d0d0; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar { flex: 1; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .browser-urlbar i { color: var(--green); font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; background: transparent; cursor: pointer; text-decoration: none; }
+    .browser-overlay-pill { background: rgba(21,101,192,0.9); color: #fff; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; padding: 9px 20px; border-radius: 24px; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.15s, transform 0.1s; }
+    .browser-overlay:hover .browser-overlay-pill { background: #1565c0; transform: translateY(-2px); }
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label { text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: var(--blue); margin-bottom: 12px; }
+    h2 { font-size: clamp(22px, 3.5vw, 34px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 14px; }
+    .section-intro { font-size: 17px; color: var(--text-sub); margin-bottom: 48px; max-width: 620px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+    .step { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--blue-light); color: var(--blue); font-weight: 800; font-size: 16px; border-radius: 8px; margin-bottom: 12px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: box-shadow 0.15s, transform 0.15s; }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(33,150,243,0.12); transform: translateY(-2px); }
+    .feature-icon { width: 44px; height: 44px; background: var(--blue-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 18px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .bottom-cta { background: linear-gradient(135deg, #0d1b3e 0%, #1565c0 100%); padding: 72px 24px; text-align: center; color: #fff; }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p { color: rgba(255,255,255,0.75); font-size: 17px; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: #fff; color: var(--blue-dark); padding: 14px 32px; border-radius: 10px; font-size: 17px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-white:hover { background: #e3f2fd; transform: translateY(-1px); }
+    footer { background: #f0f2f5; padding: 28px 24px; text-align: center; font-size: 13px; color: #888; }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .hero-inner { grid-template-columns: 1fr; } .hero-text { padding-bottom: 0; } .browser-frame { min-height: 480px; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/?start=work">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-list-check"></i> Timed Task List</div>
+        <h1>Your to-do list —<br><em>with a countdown to done.</em></h1>
+        <p class="hero-sub">Add each task, set how long it should take, and see exactly when you'll finish. TimeTally turns a static to-do list into a live, running session plan.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Add any task with any duration</li>
+          <li><i class="fas fa-check"></i> Live ETA — see "Done at 4:30 PM" before you start</li>
+          <li><i class="fas fa-check"></i> Auto-advances through your list — no manual clicking</li>
+          <li><i class="fas fa-check"></i> Voice announces each task as it starts</li>
+          <li><i class="fas fa-check"></i> Free, no account, works in any browser</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing my tasks</a>
+          <a class="btn-ghost" href="#how-it-works">How it works ↓</a>
+        </div>
+        <p class="hero-note">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+      </div>
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar"><i class="fas fa-lock"></i> timetally.ca</div>
+          </div>
+          <div class="browser-body">
+            <iframe src="/?demo=work" title="TimeTally — todo timer demo" loading="lazy"></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill"><i class="fas fa-arrow-up-right-from-square"></i> Open full app</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="how-it-works">
+    <div class="container">
+      <p class="section-label">How it works</p>
+      <h2>From to-do list to timed session in 60 seconds</h2>
+      <p class="section-intro">TimeTally is the only free browser tool that combines a task list with live countdown timers and a session ETA.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Write your tasks</h3><p>Enter each item you need to do — "Write report intro," "Reply to emails," "Review slides." Any task, named exactly what it is.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Set a time for each</h3><p>Estimate how long each task should take. 20 minutes, 45 minutes, 5 minutes — any duration, no rounding required.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>See your finish time</h3><p>The live ETA appears immediately: "Done at 4:30 PM." You know the cost of the whole list before you start a single task.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Work through it</h3><p>TimeTally runs each task in sequence, announcing transitions by voice and tracking your streak across sessions.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Know when your list ends before you start.</h2>
+    <p>Free in any browser. No account, no download.</p>
+    <a class="btn-white" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start timing my tasks</a>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.55);">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+  </section>
+
+  <section class="section section--alt" id="faq">
+    <div class="container" style="max-width:760px;">
+      <p class="section-label">FAQ</p>
+      <h2>Common questions</h2>
+      <div style="margin-top:32px;display:flex;flex-direction:column;gap:20px;">
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">What makes this different from a regular to-do list app? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">A to-do list app tracks tasks. TimeTally times them. You see how long each task should take, watch a live countdown as you work on each one, and always know when the whole session will end — not just what's left on the list.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I reorder tasks mid-session? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. You can drag tasks to reorder them, add new tasks, or skip the current task at any point. The ETA updates in real time as you modify the list.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Is it free? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Completely free — no account, no premium tier, no time limits. Every feature works immediately in any browser.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "What makes this different from a regular to-do list app?", "acceptedAnswer": { "@type": "Answer", "text": "A to-do list app tracks tasks. TimeTally times them. You see a live countdown for each task and always know when the whole session will end." } },
+      { "@type": "Question", "name": "Is it free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Completely free — no account, no premium tier, no time limits." } }
+    ]
+  }
+  </script>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/pomodoro-timer/">Pomodoro Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/chore-timer/">Chore Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/privacy/">Privacy</a>
+    </p>
+    <p style="margin-top:12px;color:#888;max-width:520px;margin-left:auto;margin-right:auto;">
+      Built by Thomas, a solo developer in Canada. TimeTally has been actively maintained since 2024 and will always be free. <a href="https://github.com/woodtho/TimeTallyToo" style="color:#2196f3;">View on GitHub</a>
+    </p>
+    <p style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <span style="color:#888;">© 2025 TimeTally &nbsp;·&nbsp; Free timed task list</span>
+      <a href="https://www.buymeacoffee.com/timetally_ca" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=%E2%8F%B2%EF%B8%8F&slug=timetally_ca&button_colour=2196F3&font_colour=ffffff&font_family=Inter&outline_colour=1565C0&coffee_colour=FFDD00" alt="Buy me a coffee" style="height:32px;width:auto;border-radius:6px;" />
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>

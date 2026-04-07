@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Free Pomodoro Timer Online – No Sign-Up, Works in Any Browser | TimeTally</title>
+  <meta name="description" content="Free Pomodoro timer that works in any browser. Custom intervals, live session ETA, YouTube tasks, and text-to-speech. No account, no download, no 25-minute lock-in." />
+  <link rel="canonical" href="https://timetally.ca/pomodoro-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Free Pomodoro Timer Online – No Sign-Up, Works in Any Browser" />
+  <meta property="og:description" content="Custom intervals, live ETA, YouTube tasks, TTS. Free Pomodoro timer with no account and no rigid 25-minute blocks." />
+  <meta property="og:url" content="https://timetally.ca/pomodoro-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Free Pomodoro Timer Online – No Sign-Up, Works in Any Browser" />
+  <meta name="twitter:description" content="Custom intervals, live ETA, YouTube tasks, TTS. Free Pomodoro timer with no account and no rigid 25-minute blocks." />
+  <meta name="twitter:image" content="https://timetally.ca/img/playstore.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6339713711659896" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #2196f3; --blue-dark: #1565c0; --blue-light: #e3f2fd;
+      --red: #c62828; --red-mid: #e53935; --red-light: #ffebee;
+      --text: #1a1a2e; --text-sub: #555; --border: #e0e0e0; --bg: #f8fafd; --white: #ffffff; --green: #43a047;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 17px; }
+    .nav-logo { width: 30px; height: 30px; border-radius: 7px; display: block; }
+    .nav-cta { background: var(--blue); color: #fff; padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.15s; }
+    .nav-cta:hover { background: var(--blue-dark); }
+    .hero { background: linear-gradient(160deg, var(--red-light) 0%, var(--white) 55%); padding: 56px 24px 0; }
+    .hero-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--red-light); color: var(--red); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.7px; margin-bottom: 16px; }
+    h1 em { font-style: normal; color: var(--blue); }
+    .hero-sub { font-size: 17px; color: var(--text-sub); margin-bottom: 28px; max-width: 480px; }
+    .hero-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+    .hero-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: var(--text-sub); }
+    .hero-bullets li i { color: var(--green); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--blue); color: #fff; padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--text-sub); padding: 13px 26px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--border); transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .hero-demo { position: relative; align-self: stretch; }
+    .browser-frame { border-radius: 12px 12px 0 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08); height: 100%; min-height: 560px; display: flex; flex-direction: column; }
+    .browser-chrome { background: #f0f0f0; border-bottom: 1px solid #d0d0d0; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar { flex: 1; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .browser-urlbar i { color: var(--green); font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; background: transparent; cursor: pointer; text-decoration: none; }
+    .browser-overlay-pill { background: rgba(21,101,192,0.9); color: #fff; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 700; padding: 9px 20px; border-radius: 24px; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.15s, transform 0.1s; }
+    .browser-overlay:hover .browser-overlay-pill { background: #1565c0; transform: translateY(-2px); }
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label { text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; color: var(--blue); margin-bottom: 12px; }
+    h2 { font-size: clamp(22px, 3.5vw, 34px); font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; margin-bottom: 14px; }
+    .section-intro { font-size: 17px; color: var(--text-sub); margin-bottom: 48px; max-width: 620px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+    .step { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--blue-light); color: var(--blue); font-weight: 800; font-size: 16px; border-radius: 8px; margin-bottom: 12px; }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: box-shadow 0.15s, transform 0.15s; }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(33,150,243,0.12); transform: translateY(-2px); }
+    .feature-icon { width: 44px; height: 44px; background: var(--blue-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 18px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+    .bottom-cta { background: linear-gradient(135deg, #0d1b3e 0%, #1565c0 100%); padding: 72px 24px; text-align: center; color: #fff; }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p { color: rgba(255,255,255,0.75); font-size: 17px; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: #fff; color: var(--blue-dark); padding: 14px 32px; border-radius: 10px; font-size: 17px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+    .btn-white:hover { background: #e3f2fd; transform: translateY(-1px); }
+    footer { background: #f0f2f5; padding: 28px 24px; text-align: center; font-size: 13px; color: #888; }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) { .hero-inner { grid-template-columns: 1fr; } .hero-text { padding-bottom: 0; } .browser-frame { min-height: 480px; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/?start=work">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-stopwatch"></i> Free Pomodoro Timer</div>
+        <h1>Free Pomodoro Timer —<br><em>your way, not the default.</em></h1>
+        <p class="hero-sub">Classic Pomodoro if you want it. Custom intervals when you need them. And a live finish-time ETA so you always know when your session actually ends.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Standard 25/5 Pomodoro or any custom interval</li>
+          <li><i class="fas fa-check"></i> Live ETA — see your finish time the moment you start</li>
+          <li><i class="fas fa-check"></i> Auto-advances through your whole session</li>
+          <li><i class="fas fa-check"></i> Voice announces each task at the start</li>
+          <li><i class="fas fa-check"></i> Free, no account, no download</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start a Pomodoro session</a>
+          <a class="btn-ghost" href="#how-it-works">How it works ↓</a>
+        </div>
+        <p class="hero-note">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+      </div>
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar"><i class="fas fa-lock"></i> timetally.ca</div>
+          </div>
+          <div class="browser-body">
+            <iframe src="/?demo=work" title="TimeTally — Pomodoro timer demo" loading="lazy"></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill"><i class="fas fa-arrow-up-right-from-square"></i> Open full app</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="how-it-works">
+    <div class="container">
+      <p class="section-label">Getting started</p>
+      <h2>Running in 30 seconds</h2>
+      <p class="section-intro">No account, no setup. Your first Pomodoro session is 30 seconds away.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>Add your tasks</h3><p>Type your first task and set a duration — 25 minutes for classic Pomodoro, or whatever length fits your work.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>Add your breaks</h3><p>Add a 5-minute break task after each work block. Repeat the pattern as many times as your session needs.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>See your finish time</h3><p>The live ETA appears immediately: "Done at 3:45 PM." No more wondering how long the session will take.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>Hit play</h3><p>TimeTally runs through every task automatically, announcing each one by name and beeping at every interval end.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2>More than a basic countdown</h2>
+      <p class="section-intro">TimeTally supports classic Pomodoro — and goes further when you need it.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
+          <h3>Live session ETA</h3>
+          <p>See "Done at 3:45 PM" the moment you press play. Standard Pomodoro timers only show you the current block — not when your whole session ends.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-sliders"></i></div>
+          <h3>Custom intervals</h3>
+          <p>Standard 25/5 works great. But sometimes you need 50/10, or 90 minutes of deep work, or 7-minute micro-sessions. TimeTally supports all of it.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fab fa-youtube"></i></div>
+          <h3>YouTube tasks</h3>
+          <p>Paste a YouTube URL as a task — tutorial, lecture, workout video. It plays embedded in the timer and stops when time's up.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Text-to-speech cues</h3>
+          <p>Hear each task announced by name when it starts. Stay focused on your work without glancing at the screen.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Multiple project tabs</h3>
+          <p>Save separate task lists for Work, Study, and Workout. Each has its own saved tasks, settings, and streak.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-screen-button"></i></div>
+          <h3>PWA — works offline</h3>
+          <p>Install TimeTally as a PWA and it works without internet. Your saved routines are always one tap away.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Start a Pomodoro session right now.</h2>
+    <p>No account. No download. Free forever.</p>
+    <a class="btn-white" href="https://timetally.ca/?start=work"><i class="fas fa-play"></i> Start a Pomodoro session</a>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.55);">No account &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free forever</p>
+  </section>
+
+  <section class="section section--alt" id="faq">
+    <div class="container" style="max-width:760px;">
+      <p class="section-label">FAQ</p>
+      <h2>Common questions</h2>
+      <div style="margin-top:32px;display:flex;flex-direction:column;gap:20px;">
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">What is the Pomodoro technique? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">The Pomodoro technique is a time management method where you work in focused intervals (typically 25 minutes) separated by short breaks (5 minutes). After 4 work intervals, you take a longer break (15–30 minutes). TimeTally supports this pattern with any interval length you choose.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Does TimeTally support 25/5 Pomodoro? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Add a 25-minute work task, a 5-minute break task, and repeat. TimeTally runs through the sequence automatically. The only difference from a basic Pomodoro timer is that you also see exactly when your whole session will end.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Is it free? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Completely free — no account, no premium tier, no time limits. Every feature works immediately in your browser.</p>
+        </details>
+        <details style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+          <summary style="font-weight:700;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I save my Pomodoro routine? <span>+</span></summary>
+          <p style="margin-top:12px;color:var(--text-sub);font-size:15px;">Yes. Your task lists save automatically in your browser. Install TimeTally as a PWA and your saved Pomodoro routine is one tap away every day — no login, no sync.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "What is the Pomodoro technique?", "acceptedAnswer": { "@type": "Answer", "text": "The Pomodoro technique is a time management method using focused 25-minute intervals separated by 5-minute breaks. TimeTally supports this with any interval length." } },
+      { "@type": "Question", "name": "Does TimeTally support 25/5 Pomodoro?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Add a 25-minute work task, a 5-minute break task, and repeat. TimeTally runs through the sequence automatically." } },
+      { "@type": "Question", "name": "Is it free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Completely free — no account, no premium tier, no time limits." } }
+    ]
+  }
+  </script>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/adhd-timer/">ADHD Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/workout-timer/">Workout Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/privacy/">Privacy</a>
+    </p>
+    <p style="margin-top:12px;color:#888;max-width:520px;margin-left:auto;margin-right:auto;">
+      Built by Thomas, a solo developer in Canada. TimeTally has been actively maintained since 2024 and will always be free. <a href="https://github.com/woodtho/TimeTallyToo" style="color:#2196f3;">View on GitHub</a>
+    </p>
+    <p style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <span style="color:#888;">© 2025 TimeTally &nbsp;·&nbsp; Free Pomodoro timer</span>
+      <a href="https://www.buymeacoffee.com/timetally_ca" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none;">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=%E2%8F%B2%EF%B8%8F&slug=timetally_ca&button_colour=2196F3&font_colour=ffffff&font_family=Inter&outline_colour=1565C0&coffee_colour=FFDD00" alt="Buy me a coffee" style="height:32px;width:auto;border-radius:6px;" />
+      </a>
+    </p>
+  </footer>
+
+</body>
+</html>
