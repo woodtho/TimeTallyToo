@@ -189,6 +189,7 @@
 .header-overflow-menu.dark-mode .header-overflow-item:hover { background: rgba(255,255,255,0.06); }
 .header-overflow-item i { width: 16px; text-align: center; color: #2196f3; font-size: 14px; flex-shrink: 0; }
 .header-overflow-menu.dark-mode .header-overflow-item i { color: #64b5f6; }
+a.header-overflow-item { text-decoration: none; }
 
 /* ===================================================
    PWA install nudge banner
@@ -372,7 +373,6 @@
   padding: 36px 48px;
   text-align: center;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  pointer-events: none;
   animation: celebrateIn 0.3s ease-out both;
 }
 .list-complete-overlay.dark-mode .list-complete-card {
@@ -2063,21 +2063,25 @@ header {
 .bmc-btn {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 20px;
   text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
   flex-shrink: 0;
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  line-height: 1;
 }
-.bmc-img {
-  height: 28px;
-  width: auto;
-  display: block;
-  border-radius: 6px;
+.bmc-btn:hover { opacity: 0.85; }
+.dark-mode .bmc-btn {
+  background: #1565c0;
+  color: #e3f2fd;
 }
-/* Light mode: show light button, hide dark */
-.bmc-img--dark { display: none; }
-.bmc-img--light { display: block; }
-/* Dark mode: show dark button, hide light */
-.options-overlay.dark-mode .bmc-img--light { display: none; }
-.options-overlay.dark-mode .bmc-img--dark  { display: block; }
 
 /* Help Menu */
 .help-menu {
