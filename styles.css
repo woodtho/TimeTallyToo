@@ -245,6 +245,12 @@ a.header-overflow-item { text-decoration: none; }
 }
 .pwa-prompt-dismiss:hover { opacity: 1; }
 
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* App tagline beneath the h1 */
 .app-tagline {
   font-size: 11px;
@@ -666,11 +672,9 @@ body {
 
 h1 {
   margin-top: 0;
-  margin-bottom: 20px;
-  text-align: center;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
 }
 .app-logo {
