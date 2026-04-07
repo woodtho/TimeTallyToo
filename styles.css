@@ -250,7 +250,7 @@ a.header-overflow-item { text-decoration: none; }
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  flex: 1;
+  overflow: hidden;
 }
 
 /* App tagline beneath the h1 */
