@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Free Browser Workout Timer with YouTube – No App, No Account | TimeTally</title>
+  <meta name="description" content="Build a custom workout interval timer in your browser. Play any YouTube workout video alongside your intervals. Auto-advance, voice cues, PWA installable. Free, no sign-up." />
+  <link rel="canonical" href="https://timetally.ca/workout-timer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Free Browser Workout Timer with YouTube | TimeTally" />
+  <meta property="og:description" content="Play YouTube workout videos alongside custom intervals. Auto-advance, voice cues, no account needed." />
+  <meta property="og:url" content="https://timetally.ca/workout-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Free Browser Workout Timer with YouTube",
+    "description": "Custom interval workout timer that plays YouTube videos alongside your workout. Free, no sign-up.",
+    "url": "https://timetally.ca/workout-timer/"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #43a047;
+      --green-dark: #2e7d32;
+      --green-light: #e8f5e9;
+      --blue: #2196f3;
+      --blue-dark: #1565c0;
+      --text: #1a1a2e;
+      --text-sub: #555;
+      --border: #e0e0e0;
+      --bg: #f8fdf8;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 9px;
+      text-decoration: none; color: var(--text);
+      font-weight: 700; font-size: 17px;
+    }
+    .nav-icon {
+      width: 30px; height: 30px;
+      background: var(--blue); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px;
+    }
+    .nav-cta {
+      background: var(--green); color: #fff;
+      padding: 8px 18px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--green-dark); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(160deg, #e8f5e9 0%, var(--white) 55%);
+      padding: 56px 24px 0;
+    }
+    .hero-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 48px; align-items: start;
+    }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-light); color: var(--green-dark);
+      font-size: 13px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px; margin-bottom: 20px;
+    }
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: -0.7px; margin-bottom: 16px;
+    }
+    h1 em { font-style: normal; color: var(--green); }
+    .hero-sub {
+      font-size: 17px; color: var(--text-sub);
+      margin-bottom: 28px; max-width: 480px;
+    }
+    .hero-bullets {
+      list-style: none; display: flex;
+      flex-direction: column; gap: 10px; margin-bottom: 32px;
+    }
+    .hero-bullets li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 15px; color: var(--text-sub);
+    }
+    .hero-bullets li i { color: var(--green); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--green); color: #fff;
+      padding: 13px 26px; border-radius: 10px;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--text-sub);
+      padding: 13px 26px; border-radius: 10px;
+      font-size: 16px; font-weight: 600; text-decoration: none;
+      border: 1.5px solid var(--border); transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+
+    /* ── Browser frame ── */
+    .hero-demo { align-self: stretch; }
+    .browser-frame {
+      border-radius: 12px 12px 0 0; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+      height: 100%; min-height: 560px;
+      display: flex; flex-direction: column;
+    }
+    .browser-chrome {
+      background: #f0f0f0; border-bottom: 1px solid #d0d0d0;
+      padding: 9px 14px;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar {
+      flex: 1; background: #fff; border: 1px solid #d0d0d0;
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 12px; color: #555;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .browser-urlbar i { color: #43a047; font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay {
+      position: absolute; inset: 0; z-index: 10;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 20px; background: transparent;
+      cursor: pointer; text-decoration: none;
+    }
+    .browser-overlay-pill {
+      background: rgba(46,125,50,0.9); color: #fff;
+      font-family: system-ui, sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 9px 20px; border-radius: 24px;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .browser-overlay:hover .browser-overlay-pill { background: #2e7d32; transform: translateY(-2px); }
+
+    /* ── Sections ── */
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label {
+      text-transform: uppercase; font-size: 12px;
+      font-weight: 700; letter-spacing: 1.2px;
+      color: var(--green); margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(22px, 3.5vw, 34px);
+      font-weight: 800; letter-spacing: -0.4px;
+      line-height: 1.2; margin-bottom: 14px;
+    }
+    .section-intro {
+      font-size: 17px; color: var(--text-sub);
+      margin-bottom: 48px; max-width: 620px;
+    }
+
+    /* ── Steps ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 28px;
+      counter-reset: steps;
+    }
+    .step {
+      position: relative; padding: 28px 24px 24px;
+      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+    }
+    .step::before {
+      counter-increment: steps;
+      content: counter(steps);
+      position: absolute; top: -14px; left: 20px;
+      width: 28px; height: 28px;
+      background: var(--green); color: #fff;
+      border-radius: 50%; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; margin-top: 4px; }
+    .step p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+
+    /* ── Feature cards ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(67,160,71,0.12); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: var(--green-light); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--green); font-size: 18px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+
+    /* ── Use cases ── */
+    .use-cases {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .use-case {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px 20px;
+    }
+    .use-case h3 {
+      font-size: 15px; font-weight: 700; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .use-case h3 i { color: var(--green); font-size: 14px; }
+    .use-case ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .use-case ul li {
+      font-size: 13px; color: var(--text-sub);
+      display: flex; align-items: flex-start; gap: 7px;
+    }
+    .use-case ul li::before { content: "·"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+    /* ── Bottom CTA ── */
+    .bottom-cta {
+      background: linear-gradient(135deg, #1b5e20 0%, #388e3c 100%);
+      padding: 72px 24px; text-align: center; color: #fff;
+    }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p {
+      color: rgba(255,255,255,0.8); font-size: 17px;
+      margin-bottom: 36px; max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+    .btn-white {
+      background: #fff; color: var(--green-dark);
+      padding: 14px 32px; border-radius: 10px;
+      font-size: 17px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-white:hover { background: #e8f5e9; transform: translateY(-1px); }
+
+    footer {
+      background: #f0f2f5; padding: 28px 24px;
+      text-align: center; font-size: 13px; color: #888;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-text { padding-bottom: 0; }
+      .browser-frame { min-height: 480px; border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <div class="nav-icon"><i class="fas fa-clock"></i></div>
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-dumbbell"></i> Free Workout Timer</div>
+        <h1>Your workout video.<br>Your intervals. <em>Your browser.</em></h1>
+        <p class="hero-sub">Build a custom interval timer, paste a YouTube workout video as a task, and let TimeTally run your session — auto-advancing between exercises with voice cues.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> YouTube videos play inside the timer, stop on time</li>
+          <li><i class="fas fa-check"></i> Auto-advance between exercises — no tapping</li>
+          <li><i class="fas fa-check"></i> Voice announces each exercise as it starts</li>
+          <li><i class="fas fa-check"></i> Audible beep at every interval end</li>
+          <li><i class="fas fa-check"></i> Save your routine, install as a PWA</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/"><i class="fas fa-dumbbell"></i> Build my workout timer</a>
+          <a class="btn-ghost" href="#how-it-works">How it works ↓</a>
+        </div>
+        <p class="hero-note">Works on phone &amp; desktop &nbsp;·&nbsp; No download &nbsp;·&nbsp; Free forever</p>
+      </div>
+
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar">
+              <i class="fas fa-lock"></i>
+              timetally.ca
+            </div>
+          </div>
+          <div class="browser-body">
+            <iframe
+              src="/?demo=workout"
+              title="TimeTally — workout demo"
+              loading="lazy"
+            ></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open full app
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section section--alt" id="how-it-works">
+    <div class="container">
+      <p class="section-label">How it works</p>
+      <h2>From zero to running in 60 seconds</h2>
+      <p class="section-intro">No templates, no sign-up flow, no tutorial. Just add your exercises and hit play.</p>
+      <div class="steps">
+        <div class="step">
+          <h3>Add your exercises</h3>
+          <p>Type each exercise name and duration. Squats 45s, Rest 15s, Burpees 1m — whatever your routine calls for.</p>
+        </div>
+        <div class="step">
+          <h3>Paste a YouTube video (optional)</h3>
+          <p>Drop a YouTube URL for any task. The video plays embedded in the timer and stops when time runs out.</p>
+        </div>
+        <div class="step">
+          <h3>Hit play</h3>
+          <p>TimeTally auto-advances through every exercise, announces each one by name, and shows what's coming next.</p>
+        </div>
+        <div class="step">
+          <h3>Install for next time</h3>
+          <p>Save your workout as a tab. Add TimeTally to your home screen as a PWA and your routine is always one tap away.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2>Built for real workout sessions</h2>
+      <p class="section-intro">Not a generic timer with a workout skin — features that actually matter mid-rep.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fab fa-youtube"></i></div>
+          <h3>YouTube in the timer</h3>
+          <p>Paste any YouTube URL as a task. Follow along with a workout video while the timer tracks your intervals automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Voice announcements</h3>
+          <p>"Starting burpees for 1 minute." Eyes on the exercise, not the screen. TTS calls out each task as it begins.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-forward-step"></i></div>
+          <h3>Auto-advance</h3>
+          <p>When the timer hits zero, the next exercise starts automatically. No tapping, no pausing — just keep moving.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-bell"></i></div>
+          <h3>Audible beep cues</h3>
+          <p>A beep at the end of each interval so you know to transition even if you're not watching the screen.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Multiple routines as tabs</h3>
+          <p>Keep HIIT, Yoga, and Strength as separate tabs. Switch between them without losing your custom setups.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-screen-button"></i></div>
+          <h3>PWA — no app store</h3>
+          <p>Install directly from your browser. Works offline. Your saved routines are stored locally — no account required.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use cases -->
+  <section class="section section--alt">
+    <div class="container">
+      <p class="section-label">Works for</p>
+      <h2>Every kind of workout session</h2>
+      <p class="section-intro">The same timer works whether you're doing HIIT in the living room or a structured gym session.</p>
+      <div class="use-cases">
+        <div class="use-case">
+          <h3><i class="fas fa-fire"></i> HIIT</h3>
+          <ul>
+            <li>Work / rest intervals</li>
+            <li>Tabata 20s/10s structure</li>
+            <li>Jump rope, burpees, sprints</li>
+            <li>Multiple rounds</li>
+          </ul>
+        </div>
+        <div class="use-case">
+          <h3><i class="fas fa-person-running"></i> Cardio</h3>
+          <ul>
+            <li>Warm-up, main set, cool-down</li>
+            <li>Interval running (fast/slow)</li>
+            <li>YouTube follow-along videos</li>
+            <li>Treadmill time blocks</li>
+          </ul>
+        </div>
+        <div class="use-case">
+          <h3><i class="fas fa-dumbbell"></i> Strength</h3>
+          <ul>
+            <li>Exercise + rest structure</li>
+            <li>Supersets</li>
+            <li>Time-under-tension sets</li>
+            <li>Named exercises per task</li>
+          </ul>
+        </div>
+        <div class="use-case">
+          <h3><i class="fas fa-spa"></i> Yoga / Stretch</h3>
+          <ul>
+            <li>Pose hold timers</li>
+            <li>Follow-along YouTube classes</li>
+            <li>Breathing intervals</li>
+            <li>Voice cues for transitions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Start your next workout in 60 seconds</h2>
+    <p>Open TimeTally in your browser, add your exercises, and hit play. No sign-up, no download.</p>
+    <a class="btn-white" href="https://timetally.ca/"><i class="fas fa-dumbbell"></i> Build my workout timer</a>
+  </section>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/#/help">Help</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a>
+    </p>
+    <p style="margin-top:8px;">© 2025 TimeTally &nbsp;·&nbsp; Free browser-based interval timer</p>
+  </footer>
+
+</body>
+</html>

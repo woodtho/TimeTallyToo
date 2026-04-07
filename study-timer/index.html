@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Free Study Timer with Task List and ETA | TimeTally</title>
+  <meta name="description" content="Know exactly when you'll finish studying. TimeTally is a free study timer with a timed task list, session ETA, subject tabs, streaks, and text-to-speech. No sign-up." />
+  <link rel="canonical" href="https://timetally.ca/study-timer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Free Study Timer with Task List and ETA | TimeTally" />
+  <meta property="og:description" content="Structure your study sessions with a timed task list. Know when you'll be done, track streaks, switch subjects with tabs. Free, no account." />
+  <meta property="og:url" content="https://timetally.ca/study-timer/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Free Study Timer with Task List and ETA",
+    "description": "Free study timer with timed task list, session ETA, subject tabs, and streak tracking. No sign-up required.",
+    "url": "https://timetally.ca/study-timer/"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #7c3aed;
+      --purple-dark: #5b21b6;
+      --purple-light: #ede9fe;
+      --blue: #2196f3;
+      --blue-dark: #1565c0;
+      --green: #43a047;
+      --text: #1a1a2e;
+      --text-sub: #555;
+      --border: #e0e0e0;
+      --bg: #f9f7ff;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 9px;
+      text-decoration: none; color: var(--text);
+      font-weight: 700; font-size: 17px;
+    }
+    .nav-icon {
+      width: 30px; height: 30px; background: var(--blue);
+      border-radius: 7px; display: flex; align-items: center;
+      justify-content: center; color: #fff; font-size: 15px;
+    }
+    .nav-cta {
+      background: var(--purple); color: #fff;
+      padding: 8px 18px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--purple-dark); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(160deg, #ede9fe 0%, var(--white) 55%);
+      padding: 56px 24px 0;
+    }
+    .hero-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 48px; align-items: start;
+    }
+    .hero-text { padding-bottom: 56px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--purple-light); color: var(--purple-dark);
+      font-size: 13px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px; margin-bottom: 20px;
+    }
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: -0.7px; margin-bottom: 16px;
+    }
+    h1 em { font-style: normal; color: var(--purple); }
+    .hero-sub {
+      font-size: 17px; color: var(--text-sub);
+      margin-bottom: 28px; max-width: 480px;
+    }
+    .hero-bullets {
+      list-style: none; display: flex;
+      flex-direction: column; gap: 10px; margin-bottom: 32px;
+    }
+    .hero-bullets li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 15px; color: var(--text-sub);
+    }
+    .hero-bullets li i { color: var(--green); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--purple); color: #fff;
+      padding: 13px 26px; border-radius: 10px;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--purple-dark); transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--text-sub);
+      padding: 13px 26px; border-radius: 10px;
+      font-size: 16px; font-weight: 600; text-decoration: none;
+      border: 1.5px solid var(--border); transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--purple); color: var(--purple); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+
+    /* ── Browser frame ── */
+    .hero-demo { align-self: stretch; }
+    .browser-frame {
+      border-radius: 12px 12px 0 0; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+      height: 100%; min-height: 560px;
+      display: flex; flex-direction: column;
+    }
+    .browser-chrome {
+      background: #f0f0f0; border-bottom: 1px solid #d0d0d0;
+      padding: 9px 14px;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .browser-dots { display: flex; gap: 6px; flex-shrink: 0; }
+    .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar {
+      flex: 1; background: #fff; border: 1px solid #d0d0d0;
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 12px; color: #555;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .browser-urlbar i { color: #43a047; font-size: 10px; }
+    .browser-body { flex: 1; overflow: hidden; position: relative; background: #f0f2f5; }
+    .browser-body iframe { width: 100%; height: 100%; border: none; display: block; pointer-events: none; }
+    .browser-overlay {
+      position: absolute; inset: 0; z-index: 10;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 20px; background: transparent;
+      cursor: pointer; text-decoration: none;
+    }
+    .browser-overlay-pill {
+      background: rgba(91,33,182,0.9); color: #fff;
+      font-family: system-ui, sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 9px 20px; border-radius: 24px;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .browser-overlay:hover .browser-overlay-pill { background: #5b21b6; transform: translateY(-2px); }
+
+    /* ── Sections ── */
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label {
+      text-transform: uppercase; font-size: 12px;
+      font-weight: 700; letter-spacing: 1.2px;
+      color: var(--purple); margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(22px, 3.5vw, 34px);
+      font-weight: 800; letter-spacing: -0.4px;
+      line-height: 1.2; margin-bottom: 14px;
+    }
+    .section-intro {
+      font-size: 17px; color: var(--text-sub);
+      margin-bottom: 48px; max-width: 620px;
+    }
+
+    /* ── Feature cards ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(124,58,237,0.10); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: var(--purple-light); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--purple); font-size: 18px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+
+    .callout {
+      background: linear-gradient(135deg, #ede9fe, #f5f3ff);
+      border-left: 4px solid var(--purple);
+      border-radius: 0 12px 12px 0;
+      padding: 24px 28px; margin: 48px 0 0;
+      font-size: 17px; color: var(--text);
+      font-style: italic; line-height: 1.6;
+    }
+
+    /* ── vs comparison ── */
+    .vs-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    }
+    @media (max-width: 540px) { .vs-grid { grid-template-columns: 1fr; } }
+    .vs-card {
+      border-radius: 12px; padding: 24px; border: 1px solid var(--border);
+    }
+    .vs-card.tt { border-color: var(--purple); background: #faf8ff; }
+    .vs-card.other { background: #fafafa; }
+    .vs-card-title {
+      font-size: 15px; font-weight: 800; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .vs-card.tt .vs-card-title { color: var(--purple); }
+    .vs-card.other .vs-card-title { color: #888; }
+    .vs-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .vs-list li {
+      font-size: 14px; color: var(--text-sub);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .vs-list li i { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+    .vs-card.tt .vs-list li i { color: var(--green); }
+    .vs-card.other .vs-list li i { color: #e53935; }
+
+    /* ── Bottom CTA ── */
+    .bottom-cta {
+      background: linear-gradient(135deg, #2d1b69 0%, #7c3aed 100%);
+      padding: 72px 24px; text-align: center; color: #fff;
+    }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p {
+      color: rgba(255,255,255,0.8); font-size: 17px;
+      margin-bottom: 36px; max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+    .btn-white {
+      background: #fff; color: var(--purple-dark);
+      padding: 14px 32px; border-radius: 10px;
+      font-size: 17px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-white:hover { background: #ede9fe; transform: translateY(-1px); }
+
+    footer {
+      background: #f0f2f5; padding: 28px 24px;
+      text-align: center; font-size: 13px; color: #888;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-text { padding-bottom: 0; }
+      .browser-frame { min-height: 480px; border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <div class="nav-icon"><i class="fas fa-clock"></i></div>
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/">Try it free →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-book-open"></i> Free Study Timer</div>
+        <h1>Know <em>exactly</em> when you'll finish studying</h1>
+        <p class="hero-sub">Structure your session as a timed task list. TimeTally shows a live finish-time ETA, auto-advances through subjects, and keeps streaks — free, no account.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Live ETA bar — "done at 4:15 PM"</li>
+          <li><i class="fas fa-check"></i> Multiple subject tabs, each with its own task list</li>
+          <li><i class="fas fa-check"></i> Auto-advance keeps you off your phone between tasks</li>
+          <li><i class="fas fa-check"></i> Text-to-speech announces each task as it starts</li>
+          <li><i class="fas fa-check"></i> Session streak tracking and per-subject stats</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/"><i class="fas fa-book-open"></i> Start a study session</a>
+          <a class="btn-ghost" href="#features">See all features ↓</a>
+        </div>
+        <p class="hero-note">No sign-up &nbsp;·&nbsp; No download &nbsp;·&nbsp; Free forever</p>
+      </div>
+
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots"><span></span><span></span><span></span></div>
+            <div class="browser-urlbar">
+              <i class="fas fa-lock"></i>
+              timetally.ca
+            </div>
+          </div>
+          <div class="browser-body">
+            <iframe
+              src="/?demo=study"
+              title="TimeTally — study demo"
+              loading="lazy"
+            ></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open full app
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2>Everything a study session needs</h2>
+      <p class="section-intro">Purpose-built for structured study — not a generic countdown clock.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
+          <h3>Live finish-time ETA</h3>
+          <p>A bar that sums your remaining tasks and tells you "done at 4:15 PM." Know when to stop procrastinating and when to take a real break.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Subject tabs</h3>
+          <p>Each subject is a saved tab with its own task list and settings. Switch between Maths and History without losing your place.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-forward-step"></i></div>
+          <h3>Auto-advance</h3>
+          <p>When the timer hits zero, the next task starts automatically. No temptation to "just check" your phone between tasks.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Text-to-speech cues</h3>
+          <p>"Starting Past paper Q1–Q8 for 40 minutes." Hear each task announced so you stay heads-down without watching the clock.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-fire"></i></div>
+          <h3>Session streaks</h3>
+          <p>Track consecutive days you complete a full session. The streak counter makes showing up feel rewarding even before you open the books.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+          <h3>Per-session stats</h3>
+          <p>Time logged per subject, sessions completed, total hours this week. A quick reminder that the work is adding up.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-triangle-exclamation"></i></div>
+          <h3>Warning threshold</h3>
+          <p>Set a warning at 5 minutes remaining and the timer pulses red. A heads-up to start wrapping up the current task.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-screen-button"></i></div>
+          <h3>Install as a PWA</h3>
+          <p>Add to your home screen on any device. Your saved sessions are always there, no login required.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        "I used to waste 10 minutes figuring out whether I had time to finish a chapter before dinner. The ETA bar solved that completely — I can see exactly what I can fit in."
+      </div>
+    </div>
+  </section>
+
+  <!-- vs comparison -->
+  <section class="section section--alt">
+    <div class="container">
+      <p class="section-label">Why TimeTally</p>
+      <h2>What makes it different from a Pomodoro timer</h2>
+      <p class="section-intro">Pomodoro timers are great for one thing. TimeTally is built for the full session — multiple subjects, variable task lengths, and a real answer to "when will I be done?"</p>
+      <div class="vs-grid">
+        <div class="vs-card tt">
+          <div class="vs-card-title"><i class="fas fa-clock"></i> TimeTally</div>
+          <ul class="vs-list">
+            <li><i class="fas fa-check"></i> Live ETA — know when you finish</li>
+            <li><i class="fas fa-check"></i> Task list with custom durations</li>
+            <li><i class="fas fa-check"></i> Multiple subject tabs</li>
+            <li><i class="fas fa-check"></i> Per-subject settings</li>
+            <li><i class="fas fa-check"></i> Session streak tracking</li>
+            <li><i class="fas fa-check"></i> Text-to-speech cues</li>
+            <li><i class="fas fa-check"></i> No sign-up, free, all features</li>
+          </ul>
+        </div>
+        <div class="vs-card other">
+          <div class="vs-card-title"><i class="fas fa-stopwatch"></i> Typical Pomodoro timer</div>
+          <ul class="vs-list">
+            <li><i class="fas fa-xmark"></i> Fixed 25/5 blocks only</li>
+            <li><i class="fas fa-xmark"></i> No task-level time allocation</li>
+            <li><i class="fas fa-xmark"></i> No subject tabs</li>
+            <li><i class="fas fa-xmark"></i> One set of settings for everything</li>
+            <li><i class="fas fa-xmark"></i> No ETA or finish-time view</li>
+            <li><i class="fas fa-xmark"></i> No TTS</li>
+            <li><i class="fas fa-xmark"></i> Often requires account for features</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Make today's study session count</h2>
+    <p>Open TimeTally, build your session, and see exactly when you'll be done. Free, no sign-up, runs in any browser.</p>
+    <a class="btn-white" href="https://timetally.ca/"><i class="fas fa-book-open"></i> Start studying now</a>
+  </section>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/#/help">Help</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/vs-pomofocus/">vs Pomofocus</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/workout-timer/">Workout Timer</a>
+    </p>
+    <p style="margin-top:8px;">© 2025 TimeTally &nbsp;·&nbsp; Free browser-based study timer</p>
+  </footer>
+
+</body>
+</html>

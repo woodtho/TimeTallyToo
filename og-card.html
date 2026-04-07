@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<!--
+  TimeTally OG Image Template — 1200 × 630 px
+  ─────────────────────────────────────────────
+  HOW TO EXPORT:
+  1. Open this file in Chrome (File → Open File, or drag & drop)
+  2. Open DevTools (F12)
+  3. Toggle Device Toolbar (Ctrl+Shift+M)
+  4. Set custom size: 1200 × 630
+  5. Right-click the page → "Capture screenshot"
+     OR use DevTools → ⋮ → "Capture full-size screenshot"
+  6. Save as public/img/og-preview.png
+  7. Update index.html: change og:image and twitter:image to
+     https://timetally.ca/img/og-preview.png
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200" />
+  <title>TimeTally OG Card</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e8eaf6;
+      display: flex;
+      align-items: stretch;
+    }
+
+    /* ── Left panel: branding + tagline ── */
+    .left {
+      flex: 0 0 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 48px 60px 56px;
+      gap: 28px;
+      background: linear-gradient(135deg, #0d1b3e 0%, #0f1117 100%);
+      border-right: 1px solid #1e2440;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #2196f3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .headline {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.18;
+      color: #fff;
+      letter-spacing: -0.8px;
+    }
+
+    .headline em {
+      font-style: normal;
+      color: #64b5f6;
+    }
+
+    .bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: #b0bec5;
+      line-height: 1.4;
+    }
+
+    .bullets li .dot {
+      flex-shrink: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #2196f3;
+      margin-top: 7px;
+    }
+
+    .url {
+      font-size: 15px;
+      color: #546e7a;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Right panel: app mockup ── */
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #161b2e;
+      overflow: hidden;
+    }
+
+    /* mock header bar */
+    .mock-header {
+      height: 52px;
+      background: #1a2040;
+      border-bottom: 1px solid #1e2850;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .mock-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      flex: 1;
+    }
+
+    .mock-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #90a4ae;
+    }
+
+    /* mock tab bar */
+    .mock-tabs {
+      height: 42px;
+      background: #1a2040;
+      border-bottom: 1px solid #1e2850;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 16px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .mock-tab {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 6px 6px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      color: #546e7a;
+    }
+
+    .mock-tab.active {
+      background: #161b2e;
+      color: #64b5f6;
+      border: 1px solid #1e2850;
+      border-bottom: none;
+    }
+
+    /* mock progress bar */
+    .mock-progress-wrap {
+      height: 5px;
+      background: #1e2850;
+      flex-shrink: 0;
+    }
+
+    .mock-progress-fill {
+      height: 100%;
+      width: 34%;
+      background: linear-gradient(90deg, #1565c0, #2196f3);
+      border-radius: 0 3px 3px 0;
+    }
+
+    /* mock task list */
+    .mock-tasks {
+      flex: 1;
+      padding: 10px 0;
+      overflow: hidden;
+    }
+
+    .mock-task {
+      display: flex;
+      align-items: center;
+      padding: 9px 20px;
+      gap: 12px;
+      font-size: 13px;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+
+    .mock-task.done {
+      opacity: 0.45;
+      border-left-color: transparent;
+    }
+
+    .mock-task.done .task-name-txt {
+      text-decoration: line-through;
+    }
+
+    .mock-task.active {
+      background: rgba(33,150,243,0.07);
+      border-left-color: #2196f3;
+      animation: breathe 2s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { border-left-color: rgba(33,150,243,0.35); }
+      50% { border-left-color: rgba(33,150,243,0.85); }
+    }
+
+    .task-toggle {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    .task-toggle.on {
+      background: #2196f3;
+      border-color: #2196f3;
+    }
+
+    .task-name-txt {
+      flex: 1;
+      color: #cfd8dc;
+      font-weight: 450;
+    }
+
+    .mock-task.active .task-name-txt {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .task-time {
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: #546e7a;
+      font-weight: 500;
+    }
+
+    .mock-task.active .task-time {
+      color: #64b5f6;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* mock footer */
+    .mock-footer {
+      height: 74px;
+      background: #1a2040;
+      border-top: 1px solid #1e2850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+
+    .footer-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #78909c;
+    }
+
+    .footer-btn.play {
+      width: 52px;
+      height: 52px;
+      background: #2196f3;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 0 0 6px rgba(33,150,243,0.18);
+    }
+
+    .footer-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .footer-task {
+      font-size: 11px;
+      color: #78909c;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .footer-time {
+      font-size: 30px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left: branding + value prop -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon">⏱</div>
+      <span class="brand-name">TimeTally</span>
+    </div>
+
+    <h1 class="headline">
+      Plan the session.<br>
+      <em>Follow the list.</em>
+    </h1>
+
+    <ul class="bullets">
+      <li>
+        <span class="dot"></span>
+        <span>Timed task lists for work, study &amp; workouts</span>
+      </li>
+      <li>
+        <span class="dot"></span>
+        <span>Auto-advance with voice prompts &amp; ETA</span>
+      </li>
+      <li>
+        <span class="dot"></span>
+        <span>YouTube tasks, Picture-in-Picture, session streaks</span>
+      </li>
+    </ul>
+
+    <span class="url">timetally.ca — free, no sign-up</span>
+  </div>
+
+  <!-- Right: app mockup -->
+  <div class="right">
+
+    <div class="mock-header">
+      <span class="mock-title">TimeTally</span>
+      <div class="mock-icon">📊</div>
+      <div class="mock-icon">⚙</div>
+      <div class="mock-icon">?</div>
+    </div>
+
+    <div class="mock-tabs">
+      <div class="mock-tab active">Workday</div>
+      <div class="mock-tab">Workout</div>
+      <div class="mock-tab">Study</div>
+    </div>
+
+    <div class="mock-progress-wrap">
+      <div class="mock-progress-fill"></div>
+    </div>
+
+    <div class="mock-tasks">
+
+      <div class="mock-task done">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Morning intention &amp; plan today's wins</span>
+        <span class="task-time">10:00</span>
+      </div>
+
+      <div class="mock-task done">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Deep work — block 1</span>
+        <span class="task-time">50:00</span>
+      </div>
+
+      <div class="mock-task active">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Deep work — block 2</span>
+        <span class="task-time">48:22</span>
+      </div>
+
+      <div class="mock-task">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Coffee &amp; email triage</span>
+        <span class="task-time">20:00</span>
+      </div>
+
+      <div class="mock-task">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Deep work — block 3</span>
+        <span class="task-time">50:00</span>
+      </div>
+
+      <div class="mock-task">
+        <div class="task-toggle on"></div>
+        <span class="task-name-txt">Lunch &amp; walk away</span>
+        <span class="task-time">45:00</span>
+      </div>
+
+    </div>
+
+    <div class="mock-footer">
+      <div class="footer-btn">⏮</div>
+      <div class="footer-btn">⏭</div>
+      <div class="footer-center">
+        <span class="footer-task">Deep work — block 2</span>
+        <span class="footer-time">48:22</span>
+      </div>
+      <div class="footer-btn play">▶</div>
+      <div class="footer-btn">⊞</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "TimeTally",
   "short_name": "TimeTally",
-  "description": "A powerful, tab-based time tracker with per-list beep & TTS options!",
+  "description": "Build timed sessions for focus blocks, routines, and workouts. Start the timer, follow the list.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

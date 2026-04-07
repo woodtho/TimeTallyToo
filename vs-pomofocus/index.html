@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TimeTally vs Pomofocus – Free Alternative with Multiple Lists &amp; YouTube</title>
+  <meta name="description" content="TimeTally is a free Pomofocus alternative with unlimited project tabs, custom task durations, YouTube video tasks, text-to-speech, and a session ETA. No account needed." />
+  <link rel="canonical" href="https://timetally.ca/vs-pomofocus/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="TimeTally vs Pomofocus – Free Alternative" />
+  <meta property="og:description" content="Multiple project tabs, YouTube tasks, TTS, and a finish-time ETA. Everything the free tier of Pomofocus is missing." />
+  <meta property="og:url" content="https://timetally.ca/vs-pomofocus/" />
+  <meta property="og:image" content="https://timetally.ca/img/playstore.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "TimeTally vs Pomofocus",
+    "description": "Comparison of TimeTally and Pomofocus as browser-based productivity timers.",
+    "url": "https://timetally.ca/vs-pomofocus/"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #2196f3;
+      --blue-dark: #1565c0;
+      --blue-light: #e3f2fd;
+      --text: #1a1a2e;
+      --text-sub: #555;
+      --border: #e0e0e0;
+      --bg: #f8fafd;
+      --white: #ffffff;
+      --green: #43a047;
+      --red: #e53935;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 17px;
+    }
+    .nav-icon {
+      width: 30px; height: 30px;
+      background: var(--blue);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px;
+    }
+    .nav-cta {
+      background: var(--blue);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--blue-dark); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(160deg, #e8f4fd 0%, var(--white) 55%);
+      padding: 56px 24px 0;
+    }
+    .hero-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .hero-text {
+      padding-bottom: 56px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--blue-light);
+      color: var(--blue-dark);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.7px;
+      margin-bottom: 16px;
+    }
+    h1 em { font-style: normal; color: var(--blue); }
+    .hero-sub {
+      font-size: 17px;
+      color: var(--text-sub);
+      margin-bottom: 28px;
+      max-width: 480px;
+    }
+    .hero-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .hero-bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--text-sub);
+    }
+    .hero-bullets li i {
+      color: var(--green);
+      font-size: 13px;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .cta-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      padding: 13px 26px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-sub);
+      padding: 13px 26px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1.5px solid var(--border);
+      transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+    .hero-note { margin-top: 14px; font-size: 12px; color: #aaa; }
+
+    /* ── Browser frame + iframe ── */
+    .hero-demo {
+      position: relative;
+      padding-bottom: 0;
+      align-self: stretch;
+    }
+    .browser-frame {
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+      height: 100%;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+    }
+    .browser-chrome {
+      background: #f0f0f0;
+      border-bottom: 1px solid #d0d0d0;
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .browser-dots {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .browser-dots span {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-urlbar {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .browser-urlbar i { color: #43a047; font-size: 10px; }
+    .browser-body {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: #f0f2f5;
+    }
+    .browser-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      pointer-events: none;
+    }
+    .browser-overlay {
+      position: absolute; inset: 0; z-index: 10;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 20px;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .browser-overlay-pill {
+      background: rgba(21,101,192,0.9);
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 9px 20px; border-radius: 24px;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .browser-overlay:hover .browser-overlay-pill { background: #1565c0; transform: translateY(-2px); }
+
+    /* ── Sections ── */
+    .section { padding: 72px 24px; }
+    .section--alt { background: var(--bg); }
+    .container { max-width: 860px; margin: 0 auto; }
+    .section-label {
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--blue);
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(22px, 3.5vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+    .section-intro {
+      font-size: 17px;
+      color: var(--text-sub);
+      margin-bottom: 48px;
+      max-width: 620px;
+    }
+
+    /* ── Comparison table ── */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px var(--border);
+    }
+    .comparison-table thead th {
+      padding: 16px 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .comparison-table thead th:first-child { text-align: left; background: #1a2040; color: #fff; }
+    .comparison-table thead th.tt { background: var(--blue); color: #fff; }
+    .comparison-table thead th.pf { background: #e53935; color: #fff; }
+    .comparison-table tbody tr:nth-child(even) { background: #f9fbff; }
+    .comparison-table tbody tr:hover { background: #eaf4ff; }
+    .comparison-table td {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .comparison-table td:first-child { font-weight: 600; }
+    .comparison-table td:not(:first-child) { text-align: center; }
+    .check { color: var(--green); font-size: 18px; }
+    .cross { color: var(--red); font-size: 18px; }
+    .partial { color: #fb8c00; font-size: 13px; font-weight: 600; }
+
+    /* ── Feature cards ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .feature-card:hover { box-shadow: 0 4px 20px rgba(33,150,243,0.12); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: var(--blue-light);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--blue);
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-sub); line-height: 1.55; }
+
+    .callout {
+      background: linear-gradient(135deg, #e8f4fd, #f0f7ff);
+      border-left: 4px solid var(--blue);
+      border-radius: 0 12px 12px 0;
+      padding: 24px 28px;
+      margin: 48px 0 0;
+      font-size: 17px;
+      color: var(--text);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Bottom CTA ── */
+    .bottom-cta {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1565c0 100%);
+      padding: 72px 24px;
+      text-align: center;
+      color: #fff;
+    }
+    .bottom-cta h2 { color: #fff; margin-bottom: 16px; }
+    .bottom-cta p {
+      color: rgba(255,255,255,0.75);
+      font-size: 17px;
+      margin-bottom: 36px;
+      max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+    .btn-white {
+      background: #fff;
+      color: var(--blue-dark);
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-white:hover { background: #e3f2fd; transform: translateY(-1px); }
+
+    footer {
+      background: #f0f2f5;
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+      }
+      .hero-text { padding-bottom: 0; }
+      .hero-demo { min-height: 480px; }
+      .browser-frame { min-height: 480px; border-radius: 12px; }
+    }
+    @media (max-width: 600px) {
+      .comparison-table { font-size: 13px; }
+      .comparison-table td, .comparison-table th { padding: 11px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="https://timetally.ca/">
+      <div class="nav-icon"><i class="fas fa-clock"></i></div>
+      TimeTally
+    </a>
+    <a class="nav-cta" href="https://timetally.ca/">Try it free →</a>
+  </nav>
+
+  <!-- Hero: text left, real app right -->
+  <section class="hero">
+    <div class="hero-inner">
+
+      <div class="hero-text">
+        <div class="hero-badge"><i class="fas fa-code-compare"></i> Pomofocus Alternative</div>
+        <h1>The Pomodoro timer that works the way <em>you</em> do</h1>
+        <p class="hero-sub">Multiple project tabs, any task duration, YouTube video tasks, and a finish-time ETA. Everything missing from Pomofocus free — in your browser, free forever.</p>
+        <ul class="hero-bullets">
+          <li><i class="fas fa-check"></i> Unlimited list tabs — Work, Study, Workout side by side</li>
+          <li><i class="fas fa-check"></i> Any task duration, not just 25 / 5 / 15 min</li>
+          <li><i class="fas fa-check"></i> YouTube video tasks with auto-stop</li>
+          <li><i class="fas fa-check"></i> Text-to-speech task announcements</li>
+          <li><i class="fas fa-check"></i> Live ETA — know when your session ends</li>
+        </ul>
+        <div class="cta-group">
+          <a class="btn-primary" href="https://timetally.ca/"><i class="fas fa-play"></i> Open TimeTally free</a>
+          <a class="btn-ghost" href="#comparison">Compare features ↓</a>
+        </div>
+        <p class="hero-note">No sign-up &nbsp;·&nbsp; No download &nbsp;·&nbsp; Installs as a PWA</p>
+      </div>
+
+      <!-- Real app in a browser chrome frame -->
+      <div class="hero-demo">
+        <div class="browser-frame">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="browser-urlbar">
+              <i class="fas fa-lock"></i>
+              timetally.ca
+            </div>
+          </div>
+          <div class="browser-body">
+            <iframe
+              src="/?demo=work"
+              title="TimeTally — demo"
+              loading="lazy"
+            ></iframe>
+            <a class="browser-overlay" href="https://timetally.ca/" target="_blank" rel="noopener" aria-label="Open TimeTally">
+              <span class="browser-overlay-pill">
+                <i class="fas fa-arrow-up-right-from-square"></i> Open full app
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Comparison table -->
+  <section class="section" id="comparison">
+    <div class="container">
+      <p class="section-label">Feature comparison</p>
+      <h2>TimeTally vs Pomofocus (free tier)</h2>
+      <p class="section-intro">Both are browser-based and free. Here's where they differ in practice.</p>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="tt">TimeTally</th>
+            <th class="pf">Pomofocus (free)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Multiple project tabs</td>
+            <td><i class="fas fa-check check"></i> Unlimited tabs</td>
+            <td><i class="fas fa-xmark cross"></i> One project</td>
+          </tr>
+          <tr>
+            <td>Custom task durations</td>
+            <td><i class="fas fa-check check"></i> Any length</td>
+            <td><i class="fas fa-xmark cross"></i> 25 / 5 / 15 min only</td>
+          </tr>
+          <tr>
+            <td>YouTube video tasks</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Text-to-speech cues</td>
+            <td><i class="fas fa-check check"></i> Built-in TTS</td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Session finish-time ETA</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Per-list settings</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Session streak tracking</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><span class="partial">Pro only</span></td>
+          </tr>
+          <tr>
+            <td>Installable PWA</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Count-up timer mode</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-xmark cross"></i></td>
+          </tr>
+          <tr>
+            <td>Auto-advance to next task</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><span class="partial">Manual</span></td>
+          </tr>
+          <tr>
+            <td>No account required</td>
+            <td><i class="fas fa-check check"></i></td>
+            <td><i class="fas fa-check check"></i></td>
+          </tr>
+          <tr>
+            <td>Free</td>
+            <td><i class="fas fa-check check"></i> All features</td>
+            <td><i class="fas fa-check check"></i> Limited features</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        "Pomofocus locks you into 25-minute blocks. TimeTally lets me set a 90-minute deep-work block, a 12-minute walk, and a 5-minute review — and tells me exactly when I'll be done."
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section section--alt">
+    <div class="container">
+      <p class="section-label">What you actually get</p>
+      <h2>The features that make the difference</h2>
+      <p class="section-intro">TimeTally was built around one question: what do you actually need from a productivity timer?</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-table-columns"></i></div>
+          <h3>Unlimited project tabs</h3>
+          <p>Keep Work, Workout, and Study as separate tabs. Switch between them without losing your place or settings.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fab fa-youtube"></i></div>
+          <h3>YouTube video tasks</h3>
+          <p>Paste a YouTube URL as a task. The video plays embedded and stops automatically when the timer runs out.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
+          <h3>Any task duration</h3>
+          <p>90-minute deep work, 7-minute coffee, 45-second plank. No preset blocks — just enter the time you need.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-volume-high"></i></div>
+          <h3>Text-to-speech cues</h3>
+          <p>Hear the task name announced as it starts. Eyes on your work, not the screen.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
+          <h3>Session ETA</h3>
+          <p>A live "done at 3:42 PM" bar so you can plan your day around when your work session actually ends.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-mobile-screen-button"></i></div>
+          <h3>Installable PWA</h3>
+          <p>Add to your home screen on any device. Works offline. No App Store, no Play Store, no account.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Ready to time your work your way?</h2>
+    <p>Open TimeTally in your browser right now. No sign-up, no download — just your tasks and a timer.</p>
+    <a class="btn-white" href="https://timetally.ca/"><i class="fas fa-play"></i> Start a free session</a>
+  </section>
+
+  <footer>
+    <p>
+      <a href="https://timetally.ca/">TimeTally</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/#/help">Help</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/#/feedback">Feedback</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/workout-timer/">Workout Timer</a> &nbsp;·&nbsp;
+      <a href="https://timetally.ca/study-timer/">Study Timer</a>
+    </p>
+    <p style="margin-top:8px;">© 2025 TimeTally &nbsp;·&nbsp; Free browser-based interval timer</p>
+  </footer>
+
+</body>
+</html>
