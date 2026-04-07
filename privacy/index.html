@@ -7,6 +7,8 @@
   <meta name="description" content="TimeTally privacy policy. Your task lists stay in your browser — we don't store any personal data on our servers." />
   <link rel="canonical" href="https://timetally.ca/privacy/" />
   <meta name="robots" content="index, follow" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -25,12 +27,20 @@
       justify-content: space-between;
     }
     .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
       text-decoration: none;
       color: #1a1a2e;
       font-weight: 700;
       font-size: 17px;
     }
-    .nav-brand span { color: #2196f3; }
+    .nav-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: block;
+    }
     .container {
       max-width: 720px;
       margin: 0 auto;
@@ -62,7 +72,7 @@
 <body>
 
 <nav>
-  <a class="nav-brand" href="https://timetally.ca/"><span>⏱</span> TimeTally</a>
+  <a class="nav-brand" href="https://timetally.ca/"><img class="nav-logo" src="/img/logo.png" alt="TimeTally" /> TimeTally</a>
   <a href="https://timetally.ca/" style="background:#2196f3;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Open app →</a>
 </nav>
 

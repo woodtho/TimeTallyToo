@@ -6,6 +6,8 @@
   <title>Free Study Timer with Task List and ETA | TimeTally</title>
   <meta name="description" content="Know exactly when you'll finish studying. TimeTally is a free study timer with a timed task list, session ETA, subject tabs, streaks, and text-to-speech. No sign-up." />
   <link rel="canonical" href="https://timetally.ca/study-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Free Study Timer with Task List and ETA | TimeTally" />
   <meta property="og:description" content="Structure your study sessions with a timed task list. Know when you'll be done, track streaks, switch subjects with tabs. Free, no account." />
@@ -63,10 +65,10 @@
       text-decoration: none; color: var(--text);
       font-weight: 700; font-size: 17px;
     }
-    .nav-icon {
-      width: 30px; height: 30px; background: var(--blue);
-      border-radius: 7px; display: flex; align-items: center;
-      justify-content: center; color: #fff; font-size: 15px;
+    .nav-logo {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      display: block;
     }
     .nav-cta {
       background: var(--purple); color: #fff;
@@ -286,7 +288,7 @@
 
   <nav>
     <a class="nav-brand" href="https://timetally.ca/">
-      <div class="nav-icon"><i class="fas fa-clock"></i></div>
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
       TimeTally
     </a>
     <a class="nav-cta" href="https://timetally.ca/?start=study">Try it free →</a>

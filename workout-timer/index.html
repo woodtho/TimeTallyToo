@@ -6,6 +6,8 @@
   <title>Free Workout Interval Timer with YouTube | TimeTally</title>
   <meta name="description" content="Build a custom workout interval timer in your browser. Play any YouTube workout video alongside your intervals. Auto-advance, voice cues, PWA installable. Free, no sign-up." />
   <link rel="canonical" href="https://timetally.ca/workout-timer/" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/Assets.xcassets/AppIcon.appiconset/32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/Assets.xcassets/AppIcon.appiconset/180.png" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Free Browser Workout Timer with YouTube | TimeTally" />
   <meta property="og:description" content="Play YouTube workout videos alongside custom intervals. Auto-advance, voice cues, no account needed." />
@@ -62,11 +64,10 @@
       text-decoration: none; color: var(--text);
       font-weight: 700; font-size: 17px;
     }
-    .nav-icon {
+    .nav-logo {
       width: 30px; height: 30px;
-      background: var(--blue); border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 15px;
+      border-radius: 7px;
+      display: block;
     }
     .nav-cta {
       background: var(--green); color: #fff;
@@ -297,7 +298,7 @@
 
   <nav>
     <a class="nav-brand" href="https://timetally.ca/">
-      <div class="nav-icon"><i class="fas fa-clock"></i></div>
+      <img class="nav-logo" src="/img/logo.png" alt="TimeTally" />
       TimeTally
     </a>
     <a class="nav-cta" href="https://timetally.ca/?start=workout">Try it free →</a>
