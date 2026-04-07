@@ -249,6 +249,8 @@ a.header-overflow-item { text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 /* App tagline beneath the h1 */
@@ -1524,6 +1526,7 @@ header {
 .header-buttons {
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .gear-button,
